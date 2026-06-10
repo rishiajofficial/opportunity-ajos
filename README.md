@@ -13,10 +13,14 @@ unlock meaningful new work.
 The dashboard provides:
 
 - Geography and theme filters
-- A ranked alignment score
+- A ranked base score with a transparent learned adjustment capped at +/-10
 - Why Ankit fits each environment
 - Problems Ankit could solve
 - A suggested emerging role
+- Like, Neutral, and Not Interested feedback with optional reasons
+- Opportunity outcome tracking
+- One opportunity intelligence question at a time
+- Learning insights and improvement proposals
 
 Suggested roles are strategic hypotheses. They may not exist inside the company
 today and do not imply that the company is hiring.
@@ -50,14 +54,41 @@ are editorial hypotheses for exploration, not objective company assessments.
 `data/ankit_profile.json` is the editable source of truth for Ankit's current
 positioning, capabilities, themes, geographies, and possible role patterns.
 
+## Learning Layer
+
+The learning layer uses local JSON only:
+
+- `data/learning/questions.json` contains the curated question bank.
+- `data/learning/state.json` stores complete answer, feedback, and outcome
+  history plus derived alignment memory.
+- `data/learning/proposals.json` stores suggestions for sources, scoring,
+  roadmap changes, and features.
+
+Explicit answers and actions are stored as facts. Repeated evidence can support
+beliefs, while tentative interpretations remain hypotheses. Learning adjusts
+rankings without replacing the original editorial score:
+
+```text
+Final Score = Base Score + Learned Adjustment
+Learned Adjustment is capped from -10 to +10
+```
+
+AJOS never automatically edits `MEMORY.md`, `DECISIONS.md`, `ROADMAP.md`, or
+`VISION.md`. Proposed changes require later review and approval.
+
 ## Project Structure
 
 ```text
 .
 ├── app.py
+├── learning.py
 ├── data
 │   ├── ankit_profile.json
-│   └── companies.csv
+│   ├── companies.csv
+│   └── learning
+│       ├── proposals.json
+│       ├── questions.json
+│       └── state.json
 ├── README.md
 └── requirements.txt
 ```

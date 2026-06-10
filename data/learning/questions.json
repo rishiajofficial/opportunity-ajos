@@ -1,0 +1,78 @@
+[
+  {
+    "id": "preferred_themes",
+    "prompt": "Which themes should AJOS prioritize when discovering opportunities?",
+    "type": "multiselect",
+    "options": [
+      "Future of Work",
+      "Creator Economy",
+      "Education",
+      "Wellness & Mental Wellbeing",
+      "Human Potential",
+      "AI-native businesses"
+    ],
+    "signal": "theme"
+  },
+  {
+    "id": "company_stage",
+    "prompt": "Which company stages are most likely to offer the right scope for creating value?",
+    "type": "multiselect",
+    "options": [
+      "Pre-seed or Seed",
+      "Series A or B",
+      "Growth stage",
+      "Established company in transformation",
+      "No strong preference"
+    ],
+    "signal": "company_stage"
+  },
+  {
+    "id": "collaboration_models",
+    "prompt": "Which collaboration models should AJOS prioritize?",
+    "type": "multiselect",
+    "options": [
+      "Advisory",
+      "Founder in Residence",
+      "Entrepreneur in Residence",
+      "Strategic Partnership",
+      "Leadership Role",
+      "Venture Creation"
+    ],
+    "signal": "collaboration_model"
+  },
+  {
+    "id": "founder_style",
+    "prompt": "Which founder qualities create the strongest working resonance?",
+    "type": "multiselect",
+    "options": [
+      "Long-term thinker",
+      "Experimental",
+      "Mission-driven",
+      "Open to unconventional talent",
+      "Direct and low-ego",
+      "Strong product intuition"
+    ],
+    "signal": "founder_style"
+  },
+  {
+    "id": "preferred_geographies",
+    "prompt": "Which geographies should AJOS prioritize for active opportunity creation?",
+    "type": "multiselect",
+    "options": [
+      "UAE",
+      "Singapore",
+      "India",
+      "Netherlands",
+      "Finland",
+      "Switzerland",
+      "Remote or global"
+    ],
+    "signal": "geography"
+  },
+  {
+    "id": "valuable_problems",
+    "prompt": "What kinds of problems do you most want to help founders solve?",
+    "type": "text",
+    "signal": "problem"
+  }
+]
