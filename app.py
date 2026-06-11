@@ -18,6 +18,11 @@ from action_engine import (
     update_action_drafts,
     update_action_status,
 )
+from company_chat import (
+    answer_company_question,
+    load_report,
+    suggested_questions,
+)
 from company_intelligence import (
     get_current_report,
     intelligence_status,
@@ -41,6 +46,7 @@ from learning import (
     load_questions,
     load_state,
     persist_learning,
+    record_feedback,
     record_outcome,
     record_review_decision,
 )
@@ -361,6 +367,106 @@ def find_company_row(companies_df: pd.DataFrame, company_name: str) -> pd.Series
 def init_session_view() -> None:
     st.session_state.setdefault("ajos_view", "review")
     st.session_state.setdefault("ajos_focus_company", None)
+    st.session_state.setdefault("company_chats", {})
+
+
+def chat_history(company_name: str) -> list[dict]:
+    chats = st.session_state.company_chats
+    return chats.setdefault(company_name, [])
+
+
+def append_chat_message(company_name: str, role: str, bullets: list[str]) -> None:
+    chat_history(company_name).append({"role": role, "bullets": bullets})
+
+
+def render_chat_messages(company_name: str) -> None:
+    for message in chat_history(company_name):
+        with st.chat_message(message["role"]):
+            for bullet in message["bullets"]:
+                st.write(f"- {bullet}")
+
+
+def render_company_chat(
+    company: pd.Series,
+    *,
+    mode: str = "explore",
+    action: dict | None = None,
+) -> None:
+    company_name = company["company"]
+    report = load_report(company_name)
+    has_intel = report is not None
+
+    st.caption("Ask anything — answers come from research on file.")
+    render_chat_messages(company_name)
+
+    suggest_cols = st.columns(min(3, len(suggested_questions(has_intel))))
+    for index, (col, prompt) in enumerate(
+        zip(suggest_cols, suggested_questions(has_intel))
+    ):
+        with col:
+            if st.button(
+                prompt,
+                key=f"chat-suggest-{mode}-{company_name}-{index}",
+                use_container_width=True,
+            ):
+                append_chat_message(company_name, "user", [prompt])
+                bullets = answer_company_question(
+                    prompt,
+                    company.to_dict(),
+                    report,
+                    action=action,
+                )
+                append_chat_message(company_name, "assistant", bullets)
+                st.rerun()
+
+    placeholder = (
+        "Ask about next steps or the draft…"
+        if mode == "action"
+        else "Ask about this company…"
+    )
+    question = st.chat_input(placeholder, key=f"chat-input-{mode}-{company_name}")
+    if question:
+        append_chat_message(company_name, "user", [question])
+        bullets = answer_company_question(
+            question,
+            company.to_dict(),
+            report,
+            action=action,
+        )
+        append_chat_message(company_name, "assistant", bullets)
+        st.rerun()
+
+
+def render_occasional_feedback(
+    learning_state: dict,
+    questions: list[dict],
+    company_name: str,
+) -> None:
+    history = chat_history(company_name)
+    if len(history) < 2 or len(history) % 4 != 0:
+        return
+    open_questions = get_open_questions(learning_state, questions)
+    if not open_questions:
+        return
+    question = open_questions[0]
+    st.markdown("**Quick check-in**")
+    st.caption(truncate(question["prompt"], 120))
+    with st.form(f"inline-learn-{company_name}-{question['id']}"):
+        if question["type"] == "multiselect":
+            answer = st.multiselect(
+                "Your answer",
+                question["options"],
+                label_visibility="collapsed",
+            )
+        else:
+            answer = st.text_input("Your answer", label_visibility="collapsed")
+        if st.form_submit_button("Save", use_container_width=True):
+            has_answer = (
+                bool(answer) if isinstance(answer, list) else bool(str(answer).strip())
+            )
+            if has_answer:
+                answer_question(learning_state, question, answer)
+                st.rerun()
 
 
 def open_focus_view(company_name: str) -> None:
@@ -548,7 +654,12 @@ def render_action_surface(action: dict) -> None:
 
 
 def render_action_details(
-    company: pd.Series, profile: dict, learning_state: dict, action: dict
+    company: pd.Series,
+    profile: dict,
+    learning_state: dict,
+    action: dict,
+    *,
+    inline_draft: bool = False,
 ) -> None:
     email_draft = action["drafts"]["email"]
     recipient = resolve_draft_recipient(action)
@@ -566,7 +677,15 @@ def render_action_details(
     if not recipient:
         st.caption("Add email below, save, then open mail.")
 
-    with st.expander("Edit draft", expanded=False):
+    draft_expander = not inline_draft
+    draft_block = (
+        st.expander("Edit draft", expanded=False)
+        if draft_expander
+        else st.container()
+    )
+    with draft_block:
+        if inline_draft:
+            st.markdown("**Email draft**")
         with st.form(f"drafts-{action['action_id']}"):
             email_to = st.text_input("To (email)", value=email_draft.get("to", ""))
             email_subject = st.text_input("Subject", value=email_draft["subject"])
@@ -576,7 +695,7 @@ def render_action_details(
                 value=action["drafts"]["linkedin"]["body"],
                 height=100,
             )
-            if st.form_submit_button("Save", use_container_width=True):
+            if st.form_submit_button("Save draft", use_container_width=True):
                 update_action_drafts(
                     company["company"],
                     action["action_id"],
@@ -883,6 +1002,8 @@ def render_review_screen(
         current = find_company_row(filtered, current_item["company"])
     render_company_card(current, is_discovered=is_discovered)
     render_review_bullets(current)
+    render_occasional_feedback(learning_state, learning_questions, current["company"])
+    render_company_chat(current, mode="explore")
     render_review_actions(
         current,
         learning_state,
@@ -930,32 +1051,22 @@ def render_focus_view(
         st.session_state.ajos_focus_company = None
         st.rerun()
 
-    render_company_card(company, label="Interested")
-    render_review_bullets(company)
-
-    with st.expander("Full picture", expanded=False):
-        st.markdown("**Why you fit**")
-        st.write(company["why_fit"])
-        st.markdown("**Problems you could solve**")
-        st.write(company["problems_to_solve"])
-        st.markdown(
-            f'<span class="role-chip">{company["suggested_role"]}</span>',
-            unsafe_allow_html=True,
-        )
-        st.write(company["description"])
-        st.link_button("Open website", company["website"], use_container_width=True)
-
-    with st.expander("Research & contacts", expanded=False):
-        render_research_tab(company)
-
+    render_company_card(company, label="Next steps")
     action = ensure_recommendation(company.to_dict(), profile, learning_state)
     render_action_surface(action)
-
-    with st.expander("Suggested action", expanded=False):
-        render_action_details(company, profile, learning_state, action)
-
+    render_action_details(
+        company,
+        profile,
+        learning_state,
+        action,
+        inline_draft=True,
+    )
+    st.markdown("---")
+    st.caption("Questions? Ask here — draft edit upar hai.")
+    render_company_chat(company, mode="action", action=action)
     with st.expander("Track progress", expanded=False):
         render_track_tab(company, profile, learning_state)
+    st.link_button("Open website", company["website"], use_container_width=True)
 
 
 def get_app_password() -> str:
