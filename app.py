@@ -1,4 +1,5 @@
 import json
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -21,17 +22,25 @@ from company_intelligence import (
     load_company_intelligence,
 )
 from contact_discovery import contacts_status, get_contact_recommendations
+from discovery_engine import (
+    approve_candidate,
+    build_review_queue,
+    get_last_run,
+    reject_candidate,
+)
 from learning import (
     answer_question,
     calculate_personalization,
     generate_insights,
     generate_proposals,
+    get_interested_companies,
     get_open_questions,
+    get_saved_companies,
     load_questions,
     load_state,
     persist_learning,
-    record_feedback,
     record_outcome,
+    record_review_decision,
 )
 
 
@@ -175,6 +184,18 @@ APP_CSS = """
     .intel-badge-fact { background: #dbeafe; color: #1e3a8a; }
     .intel-badge-observation { background: #fef3c7; color: #92400e; }
     .intel-badge-hypothesis { background: #d1fae5; color: #065f46; }
+    .discovered-badge {
+        background: #fce7f3;
+        border-radius: 999px;
+        color: #9d174d;
+        display: inline-block;
+        font-size: 0.68rem;
+        font-weight: 700;
+        letter-spacing: 0.06em;
+        margin-bottom: 0.45rem;
+        padding: 0.15rem 0.5rem;
+        text-transform: uppercase;
+    }
     a[data-testid="stLinkButton"][kind="primary"] {
         border-radius: 14px;
         font-size: 1rem;
@@ -186,6 +207,19 @@ APP_CSS = """
         border: 1px solid #e8eeea;
         border-radius: 12px;
         margin-bottom: 0.45rem;
+    }
+    .bullet-card {
+        background: #fff;
+        border: 1px solid #e4ebe6;
+        border-radius: 14px;
+        margin-bottom: 0.65rem;
+        padding: 0.85rem 0.95rem;
+    }
+    .bullet-card li {
+        color: #425049;
+        font-size: 0.92rem;
+        line-height: 1.45;
+        margin-bottom: 0.35rem;
     }
 </style>
 """
@@ -237,6 +271,71 @@ def truncate(text: str, limit: int = 140) -> str:
     return cleaned[: limit - 1].rstrip() + "…"
 
 
+def shorten_bullet(text: str, max_words: int = 12) -> str:
+    words = str(text).split()
+    if len(words) <= max_words:
+        return str(text).strip()
+    return " ".join(words[:max_words]).rstrip(",;.") + "…"
+
+
+def split_bullets(text: str, max_items: int = 4) -> list[str]:
+    cleaned = str(text).strip()
+    if not cleaned:
+        return []
+    for separator in (";", "\n"):
+        if separator in cleaned:
+            parts = [
+                shorten_bullet(part.strip())
+                for part in cleaned.split(separator)
+                if part.strip()
+            ]
+            if len(parts) > 1:
+                return parts[:max_items]
+    sentences = [
+        part.strip()
+        for part in cleaned.replace("?", ".").split(".")
+        if part.strip()
+    ]
+    if len(sentences) > 1:
+        return [shorten_bullet(sentence) for sentence in sentences[:max_items]]
+    if len(cleaned) > 100:
+        return [shorten_bullet(truncate(cleaned, 95))]
+    return [shorten_bullet(cleaned)]
+
+
+def preview_bullets_from_text(text: str, max_items: int = 3) -> list[str]:
+    return split_bullets(text, max_items=max_items)
+
+
+def render_bullet_list(items: list[str], max_items: int = 4) -> None:
+    bullets = [item for item in items if item][:max_items]
+    if not bullets:
+        return
+    items_html = "".join(f"<li>{item}</li>" for item in bullets)
+    st.markdown(
+        f'<div class="bullet-card"><ul>{items_html}</ul></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def companies_as_dicts(companies_df: pd.DataFrame) -> list[dict]:
+    return [row.to_dict() for _, row in companies_df.iterrows()]
+
+
+def find_company_row(companies_df: pd.DataFrame, company_name: str) -> pd.Series:
+    return companies_df.loc[companies_df["company"] == company_name].iloc[0]
+
+
+def init_session_view() -> None:
+    st.session_state.setdefault("ajos_view", "review")
+    st.session_state.setdefault("ajos_focus_company", None)
+
+
+def open_focus_view(company_name: str) -> None:
+    st.session_state.ajos_view = "focus"
+    st.session_state.ajos_focus_company = company_name
+
+
 def render_kind_badge(kind: str) -> None:
     labels = {
         "fact": "Fact",
@@ -249,16 +348,29 @@ def render_kind_badge(kind: str) -> None:
     )
 
 
-def render_company_card(company: pd.Series) -> None:
+def review_item_to_series(item: dict) -> pd.Series:
+    return pd.Series(item)
+
+
+def render_company_card(
+    company: pd.Series,
+    *,
+    label: str = "Opportunity",
+    is_discovered: bool = False,
+) -> None:
+    discovered_badge = (
+        '<span class="discovered-badge">Discovered</span>' if is_discovered else ""
+    )
     st.markdown(
         f"""
         <div class="company-card">
-            <div class="app-shell-title">Now viewing</div>
+            <div class="app-shell-title">{label}</div>
+            {discovered_badge}
             <h2>{company["company"]}</h2>
             <div class="company-meta">
                 {company["country"]} · {company["theme"]}
             </div>
-            <span class="score-pill">Score {int(company["final_score"])}/100</span>
+            <span class="score-pill">{int(company["final_score"])}/100 score</span>
             <span class="score-pill">{company["suggested_role"]}</span>
         </div>
         """,
@@ -281,28 +393,30 @@ def render_info_card(label: str, title: str, body: str = "") -> None:
 
 
 def render_discover_tab(company: pd.Series, filtered: pd.DataFrame) -> None:
-    render_info_card(
-        "Opportunity",
-        truncate(company["why_fit"], 110),
-        truncate(company["problems_to_solve"], 120),
+    bullets = split_bullets(company["why_fit"], 3) + split_bullets(
+        company["problems_to_solve"], 2
     )
-    with st.expander("Full opportunity lens", expanded=False):
-        st.markdown("**Why this fits**")
-        st.write(company["why_fit"])
-        st.markdown("**Problems to solve**")
-        st.write(company["problems_to_solve"])
+    render_info_card("The opportunity", company["company"])
+    render_bullet_list(bullets, max_items=4)
+    with st.expander("Full picture", expanded=False):
+        st.markdown("**Why you fit**")
+        for item in split_bullets(company["why_fit"], 10):
+            st.write(f"- {item}")
+        st.markdown("**Problems you could solve**")
+        for item in split_bullets(company["problems_to_solve"], 10):
+            st.write(f"- {item}")
         st.markdown(
             f'<span class="role-chip">{company["suggested_role"]}</span>',
             unsafe_allow_html=True,
         )
     with st.expander("About company", expanded=False):
         st.write(company["description"])
-        st.link_button("Website", company["website"], use_container_width=True)
-    with st.expander(f"Score breakdown · {int(company['final_score'])}/100", expanded=False):
-        st.metric("Base", f"{int(company['base_score'])}/100")
-        st.metric("Learned", f"{int(company['learned_adjustment']):+d}")
-        st.metric("Theme", f"{int(company['theme_score'])}/100")
-        st.caption(f"{len(filtered)} opportunities in current filters")
+        st.link_button("Open website", company["website"], use_container_width=True)
+    with st.expander(f"Score detail · {int(company['final_score'])}/100", expanded=False):
+        st.metric("Base score", f"{int(company['base_score'])}/100")
+        st.metric("From learning", f"{int(company['learned_adjustment']):+d}")
+        st.metric("Theme fit", f"{int(company['theme_score'])}/100")
+        st.caption(f"{len(filtered)} companies in filter")
 
 
 def render_company_intelligence(company_name: str) -> bool:
@@ -316,16 +430,18 @@ def render_company_intelligence(company_name: str) -> bool:
         (section for section in report["sections"] if section["id"] == "value_for_aj"),
         None,
     )
-    preview = value_section["content"] if value_section else "Research brief available."
-    render_info_card(
-        "Research",
-        truncate(preview, 100),
-        f"Updated {report['researched_at'][:10]}",
-    )
+    if value_section:
+        preview_items = value_section.get("preview") or preview_bullets_from_text(
+            value_section.get("content", ""), max_items=3
+        )
+    else:
+        preview_items = ["Research brief ready."]
+    render_info_card("Research", company_name, f"Updated {report['researched_at'][:10]}")
+    render_bullet_list(preview_items, max_items=3)
 
     with st.expander("Full company research", expanded=False):
         if status["is_stale"]:
-            st.warning("This brief may be stale.")
+            st.warning("This brief may be stale — consider refreshing.")
         for section in report["sections"]:
             st.markdown(f"**{section['title']}**")
             render_kind_badge(section["kind"])
@@ -340,21 +456,22 @@ def render_contact_recommendations(company_name: str) -> dict:
     recommendations = get_contact_recommendations(company_name)
     primary = recommendations["primary"]
     if not primary:
-        st.info("No contacts curated yet.")
+        st.info("No contacts added for this company yet.")
         return recommendations
 
     render_info_card(
-        "Reach out to",
-        f"{primary['name']}",
+        "Try first",
+        primary["name"],
         f"{primary['title']} · priority {primary['priority_score']}/100",
     )
+    render_bullet_list([shorten_bullet(primary["why_they_matter"])], max_items=1)
 
     with st.expander("Contact details", expanded=False):
         st.write(primary["why_they_matter"])
         st.markdown(f"[Source]({primary['source_url']})")
         secondary = recommendations["secondary"]
         if secondary:
-            st.markdown(f"**Backup:** {secondary['name']} · {secondary['title']}")
+            st.markdown(f"**Plan B:** {secondary['name']} · {secondary['title']}")
             st.write(secondary["why_they_matter"])
         if recommendations["why_primary"]:
             st.caption(recommendations["why_primary"])
@@ -372,48 +489,57 @@ def render_research_tab(company: pd.Series) -> None:
         render_info_card(
             "Research",
             "No deep research yet",
-            "Editorial opportunity data is still available in Discover.",
+            "Basic opportunity detail is on the review card.",
         )
     render_contact_recommendations(company["company"])
 
 
-def render_act_tab(company: pd.Series, profile: dict, learning_state: dict) -> dict:
-    action = ensure_recommendation(company.to_dict(), profile, learning_state)
+def render_action_surface(action: dict) -> None:
     target_contact = action.get("target_contact")
     contact_line = (
         f"{target_contact['name']} · {target_contact['title']}"
         if target_contact
-        else "No linked contact yet"
+        else "No contact linked yet"
     )
-
     render_info_card(
-        "Next action",
+        "Next step",
         action["recommended_action"],
         f"{action['confidence_score']}/100 confidence · {contact_line}",
     )
+    why_preview = [
+        shorten_bullet(reason)
+        for reason in action.get("why_recommended", [])
+        if not reason.lower().startswith("confidence:")
+    ][:2]
+    render_bullet_list(why_preview, max_items=2)
 
+
+def render_action_details(
+    company: pd.Series, profile: dict, learning_state: dict, action: dict
+) -> None:
     email_draft = action["drafts"]["email"]
     recipient = resolve_draft_recipient(action)
+    target_contact = action.get("target_contact")
     mailto_url, mailto_warning = build_mailto_link(action)
-    mail_label = "Open Mail app"
+    mail_label = "Open mail app"
     if recipient:
-        mail_label = f"Mail → {recipient}"
+        mail_label = f"Send mail → {recipient}"
     elif target_contact:
-        mail_label = f"Mail → {target_contact['name']}"
+        mail_label = f"Send mail → {target_contact['name']}"
 
     st.link_button(mail_label, mailto_url, type="primary", use_container_width=True)
     if mailto_warning:
-        st.caption(mailto_warning)
+        st.caption("Draft shortened so the mobile mail app can open reliably.")
     if not recipient:
-        st.caption("Add recipient email in Edit draft, then save.")
+        st.caption("Add email below, save, then open mail.")
 
     with st.expander("Edit draft", expanded=False):
         with st.form(f"drafts-{action['action_id']}"):
-            email_to = st.text_input("To", value=email_draft.get("to", ""))
+            email_to = st.text_input("To (email)", value=email_draft.get("to", ""))
             email_subject = st.text_input("Subject", value=email_draft["subject"])
-            email_body = st.text_area("Email", value=email_draft["body"], height=160)
+            email_body = st.text_area("Email draft", value=email_draft["body"], height=160)
             linkedin_body = st.text_area(
-                "LinkedIn",
+                "LinkedIn draft",
                 value=action["drafts"]["linkedin"]["body"],
                 height=100,
             )
@@ -428,19 +554,24 @@ def render_act_tab(company: pd.Series, profile: dict, learning_state: dict) -> d
                 )
                 st.rerun()
 
-    with st.expander("Why this action", expanded=False):
+    with st.expander("Why this step?", expanded=False):
         st.write(action["opportunity_summary"])
         for reason in action["why_recommended"]:
             st.write(f"- {reason}")
 
     if st.button(
-        "Refresh recommendation",
+        "Get new suggestion",
         key=f"refresh-action-{company['company']}",
         use_container_width=True,
     ):
         refresh_recommendation(company.to_dict(), profile, learning_state)
         st.rerun()
 
+
+def render_act_tab(company: pd.Series, profile: dict, learning_state: dict) -> dict:
+    action = ensure_recommendation(company.to_dict(), profile, learning_state)
+    render_action_surface(action)
+    render_action_details(company, profile, learning_state, action)
     return action
 
 
@@ -452,13 +583,13 @@ def render_track_tab(
 
     with st.form(f"action-status-{action['action_id']}"):
         status = st.selectbox(
-            "Update status",
+            "Status update",
             ACTION_STATUSES,
             index=ACTION_STATUSES.index(action["status"]),
             label_visibility="collapsed",
         )
-        note = st.text_input("Note")
-        if st.form_submit_button("Save outcome", use_container_width=True):
+        note = st.text_input("Note (optional)")
+        if st.form_submit_button("Save", use_container_width=True):
             update_action_status(
                 company["company"],
                 action["action_id"],
@@ -470,23 +601,10 @@ def render_track_tab(
                 record_outcome(learning_state, company.to_dict(), learning_outcome)
             st.rerun()
 
-    with st.expander("Quick feedback", expanded=False):
-        with st.form(f"feedback-{company['company']}"):
-            rating = st.radio(
-                "Rating",
-                ["Like", "Neutral", "Not Interested"],
-                horizontal=True,
-                label_visibility="collapsed",
-            )
-            reason = st.text_input("Reason")
-            if st.form_submit_button("Save feedback", use_container_width=True):
-                record_feedback(learning_state, company.to_dict(), rating, reason)
-                st.rerun()
-
     history = get_all_action_history(company["company"])
-    with st.expander(f"History ({len(history)})", expanded=False):
+    with st.expander(f"Action history ({len(history)})", expanded=False):
         if not history:
-            st.caption("No actions yet.")
+            st.caption("Nothing tracked yet.")
         for item in history:
             st.markdown(
                 f"**{item['recommended_action']}** · {item['status']}"
@@ -500,10 +618,10 @@ def render_learn_tab(learning_state: dict, questions: list[dict]) -> None:
         question = open_questions[0]
         render_info_card("Question", truncate(question["prompt"], 90))
     else:
-        st.caption("All questions answered. Revisit one below.")
+        st.caption("All questions answered. Reopen one below.")
         question_labels = {item["prompt"]: item for item in questions}
         selected_prompt = st.selectbox(
-            "Revisit",
+            "Reopen question",
             question_labels,
             label_visibility="collapsed",
         )
@@ -540,22 +658,22 @@ def render_learn_tab(learning_state: dict, questions: list[dict]) -> None:
                     answer_question(learning_state, question, answer)
                     st.rerun()
                 else:
-                    st.warning("Add an answer first.")
+                    st.warning("Write something first.")
 
     insights = generate_insights(learning_state, questions)
     proposals = generate_proposals(learning_state, questions)
-    with st.expander("Insights", expanded=False):
+    with st.expander("What AJOS learned", expanded=False):
         render_list(insights["learned"], "Nothing learned yet.")
         render_list(insights["hypotheses"], "No hypotheses yet.")
-    with st.expander("Proposals", expanded=False):
+    with st.expander("Future ideas", expanded=False):
         for key, label in {
-            "opportunity_source_suggestions": "Sources",
+            "opportunity_source_suggestions": "New sources",
             "scoring_suggestions": "Scoring",
             "roadmap_suggestions": "Roadmap",
             "feature_suggestions": "Features",
         }.items():
             st.markdown(f"**{label}**")
-            render_list(proposals[key], "None yet.")
+            render_list(proposals[key], "Nothing yet.")
 
 
 def render_list(items: list[str], empty_message: str) -> None:
@@ -566,6 +684,252 @@ def render_list(items: list[str], empty_message: str) -> None:
         st.write(f"- {item}")
 
 
+def render_review_bullets(company: pd.Series) -> None:
+    bullets = split_bullets(company["why_fit"], 3) + split_bullets(
+        company["problems_to_solve"], 2
+    )
+    render_bullet_list(bullets, max_items=4)
+
+
+def render_review_actions(
+    company: pd.Series,
+    learning_state: dict,
+    *,
+    is_discovered: bool = False,
+    candidate_id: str | None = None,
+) -> None:
+    company_dict = company.to_dict()
+    st.markdown("---")
+    pass_col, save_col, interested_col = st.columns(3)
+    with pass_col:
+        if st.button("Pass", key="review-pass", use_container_width=True):
+            if is_discovered and candidate_id:
+                reject_candidate(candidate_id)
+            else:
+                record_review_decision(learning_state, company_dict, "pass")
+            st.session_state.ajos_view = "review"
+            st.session_state.ajos_focus_company = None
+            st.rerun()
+    with save_col:
+        if st.button("Save for later", key="review-save", use_container_width=True):
+            if is_discovered and candidate_id:
+                merged = approve_candidate(candidate_id)
+                load_data.clear()
+                record_review_decision(learning_state, merged, "saved")
+            else:
+                record_review_decision(learning_state, company_dict, "saved")
+            st.session_state.ajos_view = "review"
+            st.session_state.ajos_focus_company = None
+            st.rerun()
+    with interested_col:
+        if st.button("Interested", key="review-interested", use_container_width=True):
+            if is_discovered and candidate_id:
+                merged = approve_candidate(candidate_id)
+                load_data.clear()
+                record_review_decision(learning_state, merged, "interested")
+                open_focus_view(merged["company"])
+            else:
+                record_review_decision(learning_state, company_dict, "interested")
+                open_focus_view(company["company"])
+            st.rerun()
+
+
+def render_review_header(
+    queue_size: int,
+    saved_count: int,
+    interested_count: int,
+) -> None:
+    header_left, header_saved, header_interested = st.columns([2.2, 1, 1.2])
+    with header_left:
+        if queue_size:
+            st.caption(f"1 of {queue_size} in queue")
+        else:
+            st.caption("Queue empty")
+    with header_saved:
+        if saved_count and st.button(f"Saved ({saved_count})", key="open-saved"):
+            st.session_state.ajos_view = "saved"
+            st.rerun()
+    with header_interested:
+        if interested_count and st.button(
+            f"Interested ({interested_count})", key="open-interested"
+        ):
+            st.session_state.ajos_view = "interested"
+            st.rerun()
+
+
+def render_discovery_footer() -> None:
+    last_run = get_last_run()
+    if not last_run:
+        return
+    themes = ", ".join(last_run.get("themes_searched", []))
+    completed_at = last_run.get("completed_at", "")
+    st.caption(
+        f"Last discovery run: {completed_at} · themes: {themes} · "
+        f"added {last_run.get('candidates_added', 0)}"
+    )
+
+
+def render_review_screen(
+    filtered: pd.DataFrame,
+    learning_state: dict,
+    learning_questions: list[dict],
+    *,
+    selected_geographies: list[str],
+    selected_themes: list[str],
+) -> None:
+    company_dicts = companies_as_dicts(filtered)
+    queue = build_review_queue(
+        company_dicts,
+        learning_state,
+        geographies=selected_geographies,
+        themes=selected_themes,
+    )
+    saved = get_saved_companies(company_dicts, learning_state)
+    interested = get_interested_companies(company_dicts, learning_state)
+
+    render_review_header(len(queue), len(saved), len(interested))
+
+    if not queue:
+        st.info("You're through the list.")
+        if saved:
+            st.caption("Open Saved to revisit bookmarked opportunities.")
+        if interested:
+            st.caption("Open Interested to continue with liked opportunities.")
+        render_discovery_footer()
+        with st.expander("AJOS learning", expanded=False):
+            render_learn_tab(learning_state, learning_questions)
+        return
+
+    current_item = queue[0]
+    is_discovered = bool(current_item.get("is_discovered"))
+    if is_discovered:
+        current = review_item_to_series(current_item)
+    else:
+        current = find_company_row(filtered, current_item["company"])
+    render_company_card(current, is_discovered=is_discovered)
+    render_review_bullets(current)
+    render_review_actions(
+        current,
+        learning_state,
+        is_discovered=is_discovered,
+        candidate_id=current_item.get("candidate_id"),
+    )
+    render_discovery_footer()
+
+    with st.expander("AJOS learning", expanded=False):
+        render_learn_tab(learning_state, learning_questions)
+
+
+def render_company_picker(
+    companies: list[dict],
+    filtered: pd.DataFrame,
+    *,
+    title: str,
+    list_key: str,
+) -> None:
+    st.markdown(f"### {title}")
+    if not companies:
+        st.caption("Nothing here yet.")
+    for company in companies:
+        row = find_company_row(filtered, company["company"])
+        if st.button(
+            f"{row['company']} · {int(row['final_score'])}/100",
+            key=f"{list_key}-{row['company']}",
+            use_container_width=True,
+        ):
+            open_focus_view(row["company"])
+            st.rerun()
+    if st.button("← Back to queue", key=f"back-{list_key}", use_container_width=True):
+        st.session_state.ajos_view = "review"
+        st.rerun()
+
+
+def render_focus_view(
+    company: pd.Series,
+    filtered: pd.DataFrame,
+    profile: dict,
+    learning_state: dict,
+) -> None:
+    if st.button("← Back to queue", key="focus-back", use_container_width=True):
+        st.session_state.ajos_view = "review"
+        st.session_state.ajos_focus_company = None
+        st.rerun()
+
+    render_company_card(company, label="Interested")
+    render_review_bullets(company)
+
+    with st.expander("Full picture", expanded=False):
+        st.markdown("**Why you fit**")
+        st.write(company["why_fit"])
+        st.markdown("**Problems you could solve**")
+        st.write(company["problems_to_solve"])
+        st.markdown(
+            f'<span class="role-chip">{company["suggested_role"]}</span>',
+            unsafe_allow_html=True,
+        )
+        st.write(company["description"])
+        st.link_button("Open website", company["website"], use_container_width=True)
+
+    with st.expander("Research & contacts", expanded=False):
+        render_research_tab(company)
+
+    action = ensure_recommendation(company.to_dict(), profile, learning_state)
+    render_action_surface(action)
+
+    with st.expander("Suggested action", expanded=False):
+        render_action_details(company, profile, learning_state, action)
+
+    with st.expander("Track progress", expanded=False):
+        render_track_tab(company, profile, learning_state)
+
+
+def get_app_password() -> str:
+    try:
+        return st.secrets["AJOS_PASSWORD"]
+    except (KeyError, AttributeError, FileNotFoundError):
+        return os.environ.get("AJOS_PASSWORD", "")
+
+
+def render_login_gate() -> None:
+    if st.session_state.get("ajos_authenticated"):
+        return
+
+    expected_password = get_app_password()
+    if not expected_password:
+        st.error("Password not configured.")
+        st.caption(
+            "Local: create `.streamlit/secrets.toml`. "
+            "Cloud: set `AJOS_PASSWORD` in Streamlit secrets."
+        )
+        st.stop()
+
+    st.markdown('<div class="app-shell-title">AJOS</div>', unsafe_allow_html=True)
+    st.subheader("Log in")
+
+    def password_entered() -> None:
+        if st.session_state.get("ajos_password_input") == expected_password:
+            st.session_state.ajos_authenticated = True
+            st.session_state.pop("ajos_login_error", None)
+        else:
+            st.session_state.ajos_login_error = True
+
+    st.text_input(
+        "Password",
+        type="password",
+        key="ajos_password_input",
+        on_change=password_entered,
+        label_visibility="collapsed",
+        placeholder="Enter password",
+    )
+    if st.session_state.get("ajos_login_error"):
+        st.error("Wrong password")
+    if st.button("Enter", use_container_width=True):
+        password_entered()
+        if st.session_state.get("ajos_authenticated"):
+            st.rerun()
+    st.stop()
+
+
 st.set_page_config(
     page_title="AJOS",
     page_icon="✦",
@@ -574,13 +938,14 @@ st.set_page_config(
 )
 
 st.markdown(APP_CSS, unsafe_allow_html=True)
+render_login_gate()
 
 try:
     companies_df, ankit_profile = load_data()
     learning_questions = load_questions()
     learning_state = persist_learning(load_state())
 except (FileNotFoundError, ValueError, json.JSONDecodeError) as error:
-    st.error(f"Opportunity data could not be loaded: {error}")
+    st.error(f"Could not load data: {error}")
     st.stop()
 
 personalization = companies_df.apply(
@@ -596,9 +961,11 @@ companies_df = companies_df.sort_values(
     ["final_score", "base_score", "company"], ascending=[False, False, True]
 )
 
+init_session_view()
+
 with st.expander("Filters", expanded=False):
     selected_geographies = st.multiselect(
-        "Geography", TARGET_GEOGRAPHIES, default=TARGET_GEOGRAPHIES
+        "Country", TARGET_GEOGRAPHIES, default=TARGET_GEOGRAPHIES
     )
     selected_themes = st.multiselect(
         "Theme", PRIORITY_THEMES, default=PRIORITY_THEMES
@@ -610,37 +977,40 @@ filtered = companies_df[
 ].copy()
 
 if filtered.empty:
-    st.warning("No matches. Broaden filters.")
+    st.warning("No matches — try broader filters.")
     st.stop()
 
-company_labels = {
-    row["company"]: f"{row['company']} · {int(row['final_score'])}"
-    for _, row in filtered.iterrows()
-}
-selected_company = st.selectbox(
-    "Company",
-    list(company_labels.keys()),
-    format_func=lambda name: company_labels[name],
-    label_visibility="collapsed",
-)
-selected = filtered.loc[filtered["company"] == selected_company].iloc[0]
-render_company_card(selected)
+company_dicts = companies_as_dicts(filtered)
+view = st.session_state.ajos_view
+focus_company = st.session_state.ajos_focus_company
 
-tab_discover, tab_research, tab_act, tab_track, tab_learn = st.tabs(
-    ["Home", "Research", "Act", "Track", "Learn"]
-)
-
-with tab_discover:
-    render_discover_tab(selected, filtered)
-
-with tab_research:
-    render_research_tab(selected)
-
-with tab_act:
-    render_act_tab(selected, ankit_profile, learning_state)
-
-with tab_track:
-    render_track_tab(selected, ankit_profile, learning_state)
-
-with tab_learn:
-    render_learn_tab(learning_state, learning_questions)
+if view == "saved":
+    render_company_picker(
+        get_saved_companies(company_dicts, learning_state),
+        filtered,
+        title="Saved for later",
+        list_key="saved",
+    )
+elif view == "interested":
+    render_company_picker(
+        get_interested_companies(company_dicts, learning_state),
+        filtered,
+        title="Interested",
+        list_key="interested",
+    )
+elif view == "focus" and focus_company:
+    try:
+        focus_row = find_company_row(companies_df, focus_company)
+    except IndexError:
+        st.session_state.ajos_view = "review"
+        st.session_state.ajos_focus_company = None
+        st.rerun()
+    render_focus_view(focus_row, filtered, ankit_profile, learning_state)
+else:
+    render_review_screen(
+        filtered,
+        learning_state,
+        learning_questions,
+        selected_geographies=selected_geographies,
+        selected_themes=selected_themes,
+    )

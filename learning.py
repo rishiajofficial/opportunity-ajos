@@ -13,8 +13,17 @@ PROPOSALS_PATH = LEARNING_DIR / "proposals.json"
 FEEDBACK_ADJUSTMENTS = {
     "Like": 6,
     "Neutral": 0,
+    "Saved": 0,
     "Not Interested": -6,
 }
+
+REVIEW_DECISION_RATINGS = {
+    "pass": "Not Interested",
+    "saved": "Saved",
+    "interested": "Like",
+}
+
+QUEUE_EXCLUDED_RATINGS = frozenset({"Not Interested", "Saved", "Like"})
 OUTCOME_ADJUSTMENTS = {
     "Not Pursued": -3,
     "Reached Out": 2,
@@ -131,6 +140,63 @@ def record_feedback(
         }
     )
     return persist_learning(state)
+
+
+def latest_company_feedback(
+    state: dict[str, Any], company_name: str
+) -> dict[str, Any] | None:
+    return latest_by(state["feedback"], "company").get(company_name)
+
+
+def record_review_decision(
+    state: dict[str, Any],
+    company: dict[str, Any],
+    decision: str,
+) -> dict[str, Any]:
+    rating = REVIEW_DECISION_RATINGS[decision]
+    return record_feedback(state, company, rating, "")
+
+
+def filter_companies_by_latest_rating(
+    companies: list[dict[str, Any]],
+    state: dict[str, Any],
+    *,
+    rating: str | None = None,
+    exclude_ratings: frozenset[str] | None = None,
+) -> list[dict[str, Any]]:
+    feedback_map = latest_by(state["feedback"], "company")
+    filtered = []
+    for company in companies:
+        feedback = feedback_map.get(company["company"])
+        latest_rating = feedback["rating"] if feedback else None
+        if rating is not None and latest_rating != rating:
+            continue
+        if exclude_ratings and latest_rating in exclude_ratings:
+            continue
+        filtered.append(company)
+    return filtered
+
+
+def get_review_queue(
+    companies: list[dict[str, Any]], state: dict[str, Any]
+) -> list[dict[str, Any]]:
+    return filter_companies_by_latest_rating(
+        companies,
+        state,
+        exclude_ratings=QUEUE_EXCLUDED_RATINGS,
+    )
+
+
+def get_saved_companies(
+    companies: list[dict[str, Any]], state: dict[str, Any]
+) -> list[dict[str, Any]]:
+    return filter_companies_by_latest_rating(companies, state, rating="Saved")
+
+
+def get_interested_companies(
+    companies: list[dict[str, Any]], state: dict[str, Any]
+) -> list[dict[str, Any]]:
+    return filter_companies_by_latest_rating(companies, state, rating="Like")
 
 
 def record_outcome(

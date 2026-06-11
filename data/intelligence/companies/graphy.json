@@ -29,85 +29,78 @@
       "sections": [
         {
           "id": "what_they_do",
-          "title": "What does this company do?",
+          "title": "Ye company kya karti hai?",
           "kind": "fact",
-          "content": "Graphy is an India-based creator-economy platform that helps educators, coaches, and experts launch and monetize online courses, memberships, and live learning experiences.",
-          "source_urls": [
-            "https://graphy.com"
-          ]
+          "content": "Graphy India-based creator-economy platform hai — educators, coaches, experts courses, memberships, live learning se monetize karte hain.",
+          "source_urls": ["https://graphy.com"]
         },
         {
           "id": "customers",
-          "title": "Who are its customers?",
+          "title": "Customers kaun hain?",
           "kind": "observation",
-          "content": "Independent educators, coaches, trainers, and subject-matter experts building knowledge businesses, with strong relevance in India and growing creator-education markets globally. Secondary users include learners and community members enrolled in creator programs.",
-          "source_urls": [
-            "https://graphy.com"
-          ]
+          "content": "Independent educators, coaches, trainers — India aur global creator-education markets. Secondary: enrolled learners aur community members.",
+          "source_urls": ["https://graphy.com"]
         },
         {
           "id": "products_and_services",
-          "title": "What products or services does it offer?",
+          "title": "Products / services kya hain?",
           "kind": "fact",
-          "content": "Course hosting, community features, payment and checkout flows, mobile apps for creators, marketing tools, live classes, and membership products. Graphy positions itself as an all-in-one stack for creators who want to own audience and revenue.",
-          "source_urls": [
-            "https://graphy.com/features"
-          ]
+          "content": "Course hosting, community, payments, creator mobile apps, marketing tools, live classes, memberships — all-in-one creator stack.",
+          "source_urls": ["https://graphy.com/features"]
         },
         {
           "id": "business_model",
-          "title": "What is its business model?",
+          "title": "Business model kya hai?",
           "kind": "observation",
-          "content": "Primarily SaaS subscriptions and platform fees on creator revenue. Growth depends on helping creators succeed quickly, reducing churn, and expanding ARPU through community, live learning, and premium creator tooling.",
-          "source_urls": [
-            "https://graphy.com"
-          ]
+          "content": "SaaS subscriptions + platform fees on creator revenue. Growth = creators ko jaldi succeed karwana, churn kam, community/live se ARPU badhana.",
+          "source_urls": ["https://graphy.com"]
         },
         {
           "id": "recent_developments",
-          "title": "What recent developments matter?",
+          "title": "Recent kya matter karta hai?",
           "kind": "observation",
-          "content": "Continued competition in the creator-education stack from global and regional players. Product emphasis appears oriented toward mobile creator workflows, community retention, and helping experts move beyond one-off course launches.",
-          "source_urls": [
-            "https://graphy.com/features"
-          ]
+          "content": "Creator-education mein competition badh rahi hai. Focus: mobile creator workflows, community retention, one-off courses se aage jaana.",
+          "source_urls": ["https://graphy.com/features"]
         },
         {
           "id": "hiring_patterns",
-          "title": "What hiring patterns are visible?",
+          "title": "Hiring patterns kya dikhte hain?",
           "kind": "observation",
-          "content": "Hiring signals across product, engineering, growth, and customer success roles typical of a scaling creator SaaS company. AJ has firsthand product familiarity as a teacher and course creator on the platform.",
-          "source_urls": [
-            "https://www.linkedin.com/company/graphy/jobs"
-          ]
+          "content": "Product, engineering, growth, customer success hiring — scaling creator SaaS signal. AJ ko product pe teacher experience hai.",
+          "source_urls": ["https://www.linkedin.com/company/graphy/jobs"]
         },
         {
           "id": "strategic_challenges",
-          "title": "What strategic challenges may exist?",
+          "title": "Strategic challenges kya ho sakte hain?",
           "kind": "hypothesis",
-          "content": "Graphy may need to differentiate beyond course hosting as creators demand better UX, AI-assisted workflows, community depth, and outcomes beyond transactional course sales. Educator onboarding and product clarity remain critical levers.",
+          "content": "Course hosting se differentiate karna padega — better UX, AI workflows, community depth chahiye. Educator onboarding critical lever hai.",
           "source_urls": []
         },
         {
           "id": "value_for_aj",
-          "title": "Why might AJ create value here?",
+          "title": "AJ yahan value kaise create kar sakta hai?",
           "kind": "hypothesis",
-          "content": "AJ brings lived educator experience on Graphy plus systems thinking across product, teaching, and creator business models. He could help shape educator onboarding, AI-enabled creator workflows, and product strategy grounded in real classroom and course-creation friction.",
+          "preview": [
+            "Graphy pe teacher experience hai — real friction pata hai",
+            "Educator onboarding + AI workflows shape kar sakte ho",
+            "Product strategy teaching + creator business se grounded"
+          ],
+          "content": "AJ Graphy pe lived educator experience laata hai plus product, teaching, creator business models pe systems thinking. Educator onboarding, AI-enabled creator workflows, aur real classroom friction pe grounded product strategy mein help kar sakta hai.",
           "source_urls": []
         },
         {
           "id": "potential_entry_points",
-          "title": "Potential entry points",
+          "title": "Entry points (job nahi — opportunity creation)",
           "kind": "hypothesis",
-          "content": "Opportunity-creation paths. These are not job applications.",
+          "content": "Ye job applications nahi — collaboration ke raste hain.",
           "items": [
-            "Product feedback and structured educator-in-residence sessions based on real teaching use",
-            "Advisor on educator onboarding and creator workflow design",
-            "Pilot project for AI-assisted course creation and community engagement",
-            "Workshop with product and design on multipotentialite educator journeys",
-            "Strategic collaboration on creator-education propositions beyond course transactions",
-            "Fractional product strategy support for a focused creator-experience sprint",
-            "Community contribution through educator playbooks, case studies, or teaching labs"
+            "Real teaching use pe product feedback / educator-in-residence",
+            "Educator onboarding + creator workflow advisor",
+            "AI-assisted course creation pilot",
+            "Product + design workshop on educator journeys",
+            "Course transactions se aage strategic collaboration",
+            "Creator-experience sprint ke liye fractional product strategy",
+            "Educator playbooks, case studies, teaching labs"
           ],
           "source_urls": []
         }

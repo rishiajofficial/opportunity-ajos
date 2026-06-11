@@ -148,8 +148,9 @@ def build_selection_reason(
     contact: dict[str, Any], action_type: str | None, *, rank: str
 ) -> str:
     tags = ", ".join(tag.replace("_", " ") for tag in contact.get("role_tags", []))
+    rank_label = "Primary" if rank == "Primary" else "Secondary"
     base = (
-        f"{rank} contact with priority {contact['priority_score']}/100. "
+        f"{rank_label} contact · priority {contact['priority_score']}/100. "
         f"{contact['why_they_matter']}"
     )
     if action_type and action_type != "Do nothing yet":
@@ -157,8 +158,7 @@ def build_selection_reason(
         if preferred and set(contact.get("role_tags", [])) & set(preferred):
             preferred_labels = ", ".join(tag.replace("_", " ") for tag in preferred)
             return (
-                f"{base} Selected because '{action_type}' typically routes to "
-                f"roles such as {preferred_labels}."
+                f"{base} '{action_type}' usually {preferred_labels} roles pe jata hai."
             )
     return base
 

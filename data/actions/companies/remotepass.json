@@ -1,0 +1,46 @@
+{
+  "entity_type": "company",
+  "entity_id": "RemotePass",
+  "actions": [
+    {
+      "action_id": "2026-06-11T15:08:14+00:00-33c0d850",
+      "opportunity_summary": "RemotePass mein Future of Work Entrepreneur in Residence ka rasta explore kar sakte ho \u2014 theme: Future of Work.",
+      "opportunity_bullets": [
+        "Future of Work theme strong fit hai",
+        "Future of Work Entrepreneur in Residence role explore kar sakte ho"
+      ],
+      "recommended_action": "Request conversation",
+      "confidence_score": 62,
+      "why_recommended": [
+        "Pehle is opportunity ko like kiya tha.",
+        "Confidence: 62/100."
+      ],
+      "target_contact": null,
+      "theme": "Future of Work",
+      "country": "UAE",
+      "suggested_role": "Future of Work Entrepreneur in Residence",
+      "status": "Suggested",
+      "status_history": [
+        {
+          "status": "Suggested",
+          "timestamp": "2026-06-11T15:08:14+00:00",
+          "note": "AJOS generated this action recommendation."
+        }
+      ],
+      "drafts": {
+        "email": {
+          "to": "",
+          "subject": "Opportunity to explore Future of Work Entrepreneur in Residence with RemotePass",
+          "body": "Namaste,\n\nMain RemotePass ka kaam Future of Work space mein follow kar raha hoon \u2014 saath mein value create karne ka meaningful chance lagta hai.\n\nEk short conversation welcome karunga \u2014 future of work entrepreneur in residence collaboration se RemotePass ke liye value kaise ban sakti hai.\n\nMera background systems thinking, product strategy, ai transformation, innovation cover karta hai \u2014 founder-led environments mein ideas, products, aur systems connect karna pasand hai.\n\nKya ek short conversation possible ho sakti hai?\n\nBest,\nAnkit",
+          "updated_at": "2026-06-11T15:08:14+00:00"
+        },
+        "linkedin": {
+          "body": "Namaste, Main RemotePass ka kaam Future of Work space mein follow kar raha hoon \u2014 saath mein value create karne ka meaningful chance lagta hai. Ek short conversation welcome karunga \u2014 future of work entrepreneur in residence collaboration se RemotePass ke liye value kaise ban sakti hai.",
+          "updated_at": "2026-06-11T15:08:14+00:00"
+        }
+      },
+      "generated_at": "2026-06-11T15:08:14+00:00",
+      "updated_at": "2026-06-11T15:08:14+00:00"
+    }
+  ]
+}

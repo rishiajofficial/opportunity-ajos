@@ -3,17 +3,34 @@
   "entity_id": "Graphy",
   "actions": [
     {
-      "action_id": "2026-06-11T12:13:53+00:00-2c1ed62c",
-      "opportunity_summary": "AJ brings lived educator experience on Graphy plus systems thinking across product, teaching, and creator business models. He could help shape educator onboarding, AI-enabled creator workflows, and product strategy grounded in real classroom and course-creation friction.",
-      "recommended_action": "Share insight",
-      "confidence_score": 76,
-      "why_recommended": [
-        "AJ previously liked this opportunity.",
-        "Company intelligence brief is available to ground outreach.",
-        "Intelligence entry points suggest a concrete collaboration path.",
-        "AJ has firsthand product experience that supports a insight-led opening.",
-        "Confidence score: 76/100."
+      "action_id": "2026-06-11T15:10:05+00:00-27bbf779",
+      "opportunity_summary": "AJ Graphy pe lived educator experience laata hai plus product, teaching, creator business models pe systems thinking. Educator onboarding, AI-enabled creator workflows, aur real classroom friction pe grounded product strategy mein help kar sakta hai.",
+      "opportunity_bullets": [
+        "Graphy pe teacher experience hai \u2014 real friction pata hai",
+        "Educator onboarding + AI workflows shape kar sakte ho",
+        "Product strategy teaching + creator business se grounded"
       ],
+      "recommended_action": "Share insight",
+      "confidence_score": 67,
+      "why_recommended": [
+        "Pehle is opportunity ko like kiya tha.",
+        "Research brief ready \u2014 outreach grounded rahega.",
+        "Entry points se clear collaboration path dikhta hai.",
+        "Product pe firsthand experience hai \u2014 insight se open karo.",
+        "Confidence: 67/100.",
+        "Pehle inko reach karo: Product leadership contact (Head of Product)."
+      ],
+      "target_contact": {
+        "contact_id": "graphy-product-lead",
+        "name": "Product leadership contact",
+        "title": "Head of Product",
+        "why_they_matter": "Educator workflow feedback + product insight \u2014 real teacher experience se pilot ideas.",
+        "priority_score": 90,
+        "source_url": "https://graphy.com/features",
+        "role_tags": [
+          "head_of_product"
+        ]
+      },
       "theme": "Creator Economy",
       "country": "India",
       "suggested_role": "Creator Education Founder in Residence",
@@ -21,34 +38,24 @@
       "status_history": [
         {
           "status": "Suggested",
-          "timestamp": "2026-06-11T12:13:53+00:00",
+          "timestamp": "2026-06-11T15:10:05+00:00",
           "note": "AJOS generated this action recommendation."
         }
       ],
       "drafts": {
         "email": {
+          "to": "",
           "subject": "Product leadership contact \u2014 opportunity to explore Creator Education Founder in Residence with Graphy",
-          "body": "Hello Product leadership contact,\n\nI have been following Graphy's work \u2014 Graphy is an India-based creator-economy platform that helps educators, coaches, and experts launch and monetize online courses, memberships, and live learning experiences.\n\nAs someone with direct experience in this space, I would like to share a few practical insights that may be useful to your team.\n\nMy background spans systems thinking, product strategy, ai transformation, innovation, and I am especially interested in founder-led environments where multipotentialite operators can connect ideas, products, and systems.\n\nWould you be open to a short conversation?\n\nBest,\nAnkit",
-          "updated_at": "2026-06-11T12:19:25+00:00"
+          "body": "Hello Product leadership contact,\n\nI have been following Graphy's work \u2014 Graphy India-based creator-economy platform hai \u2014 educators, coaches, experts courses, memberships, live learning se monetize karte hain.\n\nHaving worked directly in this space, I would value the chance to share a few practical observations that may be useful to your team.\n\nMy background spans systems thinking, product strategy, ai transformation, innovation, and I am especially drawn to founder-led environments where ideas, products, and systems can be woven together with clarity and pace.\n\nWould you be open to a short conversation?\n\nWarm regards,\nAnkit",
+          "updated_at": "2026-06-11T15:10:05+00:00"
         },
         "linkedin": {
-          "body": "Hello Product leadership contact, I have been following Graphy's work \u2014 Graphy is an India-based creator-economy platform that helps educators, coaches, and experts launch and monetize online courses, memberships, and live learning experiences. As someone with direct experience in this space, I would like to share a few practical insights that may be useful to your team.",
-          "updated_at": "2026-06-11T12:19:25+00:00"
+          "body": "Hello Product leadership contact, I have been following Graphy's work \u2014 Graphy India-based creator-economy platform hai \u2014 educators, coaches, experts courses, memberships, live learning se monetize karte hain. Having worked directly in this space, I would value the chance to share a few practical observations that may be useful to your team.",
+          "updated_at": "2026-06-11T15:10:05+00:00"
         }
       },
-      "generated_at": "2026-06-11T12:13:53+00:00",
-      "updated_at": "2026-06-11T12:19:25+00:00",
-      "target_contact": {
-        "contact_id": "graphy-product-lead",
-        "name": "Product leadership contact",
-        "title": "Head of Product",
-        "why_they_matter": "Best contact for educator workflow feedback, product insight, and pilot ideas grounded in real creator and teacher experience on the platform.",
-        "priority_score": 90,
-        "source_url": "https://graphy.com/features",
-        "role_tags": [
-          "head_of_product"
-        ]
-      }
+      "generated_at": "2026-06-11T15:10:05+00:00",
+      "updated_at": "2026-06-11T15:10:05+00:00"
     }
   ]
 }

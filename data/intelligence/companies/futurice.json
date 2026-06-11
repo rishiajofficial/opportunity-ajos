@@ -34,84 +34,77 @@
       "sections": [
         {
           "id": "what_they_do",
-          "title": "What does this company do?",
+          "title": "Ye company kya karti hai?",
           "kind": "fact",
-          "content": "Futurice is a European digital innovation and software consultancy. It helps organizations design, build, and scale digital products and services, with studios across Finland, Germany, the UK, Sweden, and Switzerland.",
-          "source_urls": [
-            "https://www.futurice.com"
-          ]
+          "content": "Futurice European digital innovation + software consultancy hai — organizations ko digital products aur services design, build, scale karne mein help karti hai. Finland, Germany, UK, Sweden, Switzerland mein studios.",
+          "source_urls": ["https://www.futurice.com"]
         },
         {
           "id": "customers",
-          "title": "Who are its customers?",
+          "title": "Customers kaun hain?",
           "kind": "observation",
-          "content": "Primarily enterprise and mid-market organizations undergoing digital transformation. Public case work spans finance, retail, media, public sector, and industrial clients seeking product innovation rather than commodity software delivery.",
-          "source_urls": [
-            "https://www.futurice.com/cases"
-          ]
+          "content": "Enterprise aur mid-market orgs digital transformation mein. Finance, retail, media, public sector, industrial — product innovation dhundhte hain, commodity delivery nahi.",
+          "source_urls": ["https://www.futurice.com/cases"]
         },
         {
           "id": "products_and_services",
-          "title": "What products or services does it offer?",
+          "title": "Products / services kya hain?",
           "kind": "fact",
-          "content": "Core offerings include product strategy, service design, custom software development, data and AI solutions, cloud engineering, and organizational change support. Futurice also runs internal ventures and open-source initiatives alongside client work.",
-          "source_urls": [
-            "https://www.futurice.com/services"
-          ]
+          "content": "Product strategy, service design, custom software, data/AI, cloud engineering, change support. Internal ventures aur open-source bhi.",
+          "source_urls": ["https://www.futurice.com/services"]
         },
         {
           "id": "business_model",
-          "title": "What is its business model?",
+          "title": "Business model kya hai?",
           "kind": "observation",
-          "content": "Revenue is driven mainly by consulting engagements, multi-disciplinary project teams, and longer-term innovation partnerships. Some studios productize repeatable methods, but the model remains relationship- and expertise-led rather than SaaS-first.",
-          "source_urls": [
-            "https://www.futurice.com/services"
-          ]
+          "content": "Consulting engagements, multi-disciplinary teams, long-term innovation partnerships. Relationship + expertise led — SaaS-first nahi.",
+          "source_urls": ["https://www.futurice.com/services"]
         },
         {
           "id": "recent_developments",
-          "title": "What recent developments matter?",
+          "title": "Recent kya matter karta hai?",
           "kind": "observation",
-          "content": "Public positioning increasingly emphasizes AI-native delivery, responsible AI, and practical transformation for large organizations. Blog and case content suggest growing focus on combining generative AI with product discovery, engineering excellence, and change management.",
-          "source_urls": [
-            "https://www.futurice.com/blog"
-          ]
+          "content": "AI-native delivery, responsible AI, practical enterprise transformation pe zyada focus. GenAI + product discovery + engineering + change management combine ho raha hai.",
+          "source_urls": ["https://www.futurice.com/blog"]
         },
         {
           "id": "hiring_patterns",
-          "title": "What hiring patterns are visible?",
+          "title": "Hiring patterns kya dikhte hain?",
           "kind": "observation",
-          "content": "Active hiring across product management, software engineering, design, data/AI, and client-facing consulting roles across European offices. Patterns suggest continued investment in cross-functional delivery teams rather than narrow specialist silos.",
-          "source_urls": [
-            "https://www.linkedin.com/company/futurice/jobs"
-          ]
+          "content": "Product, engineering, design, data/AI, consulting roles Europe mein active. Cross-functional teams pe invest — narrow silos nahi.",
+          "source_urls": ["https://www.linkedin.com/company/futurice/jobs"]
         },
         {
           "id": "strategic_challenges",
-          "title": "What strategic challenges may exist?",
+          "title": "Strategic challenges kya ho sakte hain?",
           "kind": "hypothesis",
-          "content": "Futurice may be balancing bespoke consulting margins with demand for faster, more repeatable AI transformation offerings. Client organizations often want innovation theater converted into durable capability, which requires connective leadership across strategy, product, and delivery.",
+          "content": "Bespoke consulting margins vs faster repeatable AI offerings balance karna. Clients ko innovation theater se durable capability chahiye — strategy, product, delivery connect chahiye.",
           "source_urls": []
         },
         {
           "id": "value_for_aj",
-          "title": "Why might AJ create value here?",
+          "title": "AJ yahan value kaise create kar sakta hai?",
           "kind": "hypothesis",
-          "content": "AJ could act as a connective strategist across ambiguous client mandates: translating AI ambition into teachable methods, linking education and future-of-work themes to enterprise transformation, and helping Futurice incubate cross-sector propositions beyond one-off projects.",
+          "preview": [
+            "Ambiguous client mandates mein connective strategist ban sakte ho",
+            "AI ambition ko teachable methods mein translate karo",
+            "Education + future of work ko enterprise transformation se link karo"
+          ],
+          "content": "AJ ambiguous client mandates mein connective strategist ban sakta hai: AI ambition ko teachable methods, education aur future-of-work themes ko enterprise transformation se link, aur one-off projects se aage cross-sector propositions incubate kar sakta hai.",
           "source_urls": []
         },
         {
           "id": "potential_entry_points",
-          "title": "Potential entry points",
+          "title": "Entry points (job nahi — opportunity creation)",
           "kind": "hypothesis",
-          "content": "Opportunity-creation paths. These are not job applications.",
+          "content": "Ye job applications nahi — collaboration ke raste hain.",
           "items": [
-            "Advisor on AI transformation portfolios for enterprise clients",
-            "Innovation Partner in Residence for a 8-12 week client transformation sprint",
-            "Strategic collaboration on repeatable innovation methods across education and future of work",
-            "Workshop series on turning AI ambition into practical product systems",
-            "Pilot project co-designing a new cross-sector venture concept with an internal Futurice team",
-            "Community contribution through talks, playbooks, or open methods for multipotentialite operators"
+            "Enterprise clients ke AI transformation portfolios pe advisor",
+            "8-12 week Innovation Partner in Residence sprint",
+            "Education + future of work pe repeatable innovation methods",
+            "AI ambition ko practical product systems workshop",
+            "Internal team ke saath cross-sector venture pilot",
+            "Talks, playbooks, open methods for multipotentialite operators"
           ],
           "source_urls": []
         }

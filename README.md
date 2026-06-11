@@ -46,6 +46,14 @@ Use **[Streamlit Community Cloud](https://share.streamlit.io/)** (free):
 3. Click **New app** → pick this repo, branch `main`, main file `app.py`.
 4. Deploy. You get a URL like `https://your-app.streamlit.app` — open it on
    your phone from anywhere.
+5. **Password:** App settings → **Secrets** → add:
+   ```toml
+   AJOS_PASSWORD = "your-static-password"
+   ```
+   Redeploy if needed. The password is not stored in git.
+
+**Local password:** copy `.streamlit/secrets.toml.example` to
+`.streamlit/secrets.toml` and set `AJOS_PASSWORD`.
 
 **Note:** Cloud deploys start from the committed JSON in the repo. Local changes
 you make after deploy (feedback, actions, drafts) stay on whichever environment
@@ -70,6 +78,39 @@ are editorial hypotheses for exploration, not objective company assessments.
 
 `data/ankit_profile.json` is the editable source of truth for Ankit's current
 positioning, capabilities, themes, geographies, and possible role patterns.
+
+## Background Discovery Agent
+
+While Cursor IDE is open, a discovery agent can research new opportunities in the
+background and queue them for review.
+
+**Start the loop** in the Cursor Agents window:
+
+```text
+/loop 3h Research new opportunities per DISCOVERY_AGENT.md. Max 3 candidates. Run notify script if strong match.
+```
+
+The agent reads alignment memory and proposals, researches up to 3 candidates per
+run, and writes them via `discovery_engine.py`. Strong matches (weighted score ≥
+85) trigger a Linux desktop notification:
+
+```bash
+python scripts/notify_discovery.py --message "New opportunity: <name> in <theme> — open AJOS"
+```
+
+Discovered opportunities appear first in the review queue with a **Discovered**
+badge. Pass rejects them; Save or Interested merges them into `companies.csv`.
+
+See [`DISCOVERY_AGENT.md`](DISCOVERY_AGENT.md) for full agent instructions.
+
+Manual utilities:
+
+```bash
+python discovery_engine.py add --json @/tmp/candidate.json
+python discovery_engine.py list-pending
+python discovery_engine.py list-rejected
+python discovery_engine.py record-run --themes "Wellness & Mental Wellbeing" --added 1
+```
 
 ## Learning Layer
 
@@ -98,10 +139,17 @@ AJOS never automatically edits `MEMORY.md`, `DECISIONS.md`, `ROADMAP.md`, or
 ```text
 .
 ├── app.py
+├── discovery_engine.py
+├── DISCOVERY_AGENT.md
 ├── learning.py
+├── scripts
+│   └── notify_discovery.py
 ├── data
 │   ├── ankit_profile.json
 │   ├── companies.csv
+│   ├── discovery
+│   │   ├── candidates.json
+│   │   └── runs.json
 │   └── learning
 │       ├── proposals.json
 │       ├── questions.json

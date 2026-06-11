@@ -202,9 +202,26 @@ def build_opportunity_summary(
         if value_section and value_section.get("content"):
             return value_section["content"]
     return (
-        f"Explore a {company['suggested_role']} path at {company['company']} "
-        f"in {company['theme']}."
+        f"{company['company']} mein {company['suggested_role']} ka rasta explore "
+        f"kar sakte ho — theme: {company['theme']}."
     )
+
+
+def build_opportunity_bullets(
+    company: dict[str, Any], report: dict[str, Any] | None
+) -> list[str]:
+    if report:
+        value_section = get_section(report, "value_for_aj")
+        if value_section:
+            preview = value_section.get("preview") or []
+            if preview:
+                return preview[:3]
+            if value_section.get("content"):
+                return [value_section["content"][:90]]
+    return [
+        f"{company['theme']} theme strong fit hai",
+        f"{company['suggested_role']} role explore kar sakte ho",
+    ]
 
 
 def build_why_recommended(
@@ -218,41 +235,32 @@ def build_why_recommended(
     reasons = []
     feedback = latest_feedback_for_company(learning_state, company["company"])
     if feedback and feedback["rating"] == "Like":
-        reasons.append("AJ previously liked this opportunity.")
+        reasons.append("Pehle is opportunity ko like kiya tha.")
     if report:
-        reasons.append("Company intelligence brief is available to ground outreach.")
+        reasons.append("Research brief ready — outreach grounded rahega.")
         entry_points = get_section(report, "potential_entry_points")
         if entry_points and entry_points.get("items"):
-            reasons.append(
-                "Intelligence entry points suggest a concrete collaboration path."
-            )
+            reasons.append("Entry points se clear collaboration path dikhta hai.")
     pattern_action, _ = pattern_action_boost(company["theme"], patterns)
     if pattern_action == action:
         reasons.append(
-            f"Past actions in {company['theme']} suggest this action type works for AJ."
+            f"{company['theme']} mein ye action type pehle kaam kiya."
         )
     if company["theme"] in patterns.get("successful_themes", {}):
-        reasons.append(
-            f"{company['theme']} has produced positive action outcomes before."
-        )
+        reasons.append(f"{company['theme']} se pehle positive outcomes aaye.")
     if action == "Share insight" and feedback and feedback.get("reason"):
         if any(
             word in feedback["reason"].lower()
             for word in ("used the product", "teacher", "understand")
         ):
-            reasons.append(
-                "AJ has firsthand product experience that supports a insight-led opening."
-            )
+            reasons.append("Product pe firsthand experience hai — insight se open karo.")
     if action == "Do nothing yet":
-        reasons.append(
-            "More research or intelligence may be needed before outreach is worthwhile."
-        )
+        reasons.append("Pehle aur research better — abhi outreach optional.")
     if not reasons:
         reasons.append(
-            f"Alignment with {company['theme']} and role pattern "
-            f"{company['suggested_role']} supports this next step."
+            f"{company['theme']} + {company['suggested_role']} alignment strong hai."
         )
-    reasons.append(f"Confidence score: {confidence}/100.")
+    reasons.append(f"Confidence: {confidence}/100.")
     return reasons
 
 
@@ -384,8 +392,8 @@ def generate_email_draft(
     role = company["suggested_role"]
     greeting = f"Hello {contact['name']}," if contact else "Hello,"
     opener = (
-        f"I have been following {company_name}'s work in {company['theme']} "
-        f"and see a meaningful opportunity to create value together."
+        f"I have been following {company_name}'s work in {company['theme']} and "
+        f"see a thoughtful opportunity to create value together."
     )
     if report:
         what_they_do = get_section(report, "what_they_do")
@@ -397,55 +405,57 @@ def generate_email_draft(
 
     action_lines = {
         "Offer workshop": (
-            f"I would like to explore a focused workshop on {company['theme']} "
-            f"innovation that connects strategy, systems thinking, and practical execution."
+            f"I would welcome the chance to explore a focused workshop on "
+            f"{company['theme']} — connecting strategy, systems thinking, and "
+            f"practical execution in a way your team can use immediately."
         ),
         "Offer pilot project": (
-            f"I would like to propose a short pilot project where I help shape "
-            f"a {role.lower()} initiative with clear outcomes in 4-8 weeks."
+            f"I would like to propose a short pilot — roughly four to eight weeks — "
+            f"to help shape a {role.lower()} initiative with clear, measurable outcomes."
         ),
         "Offer advisory support": (
-            f"I would like to explore advisory support around {role.lower()} "
-            f"and how AJ can help connect product, AI, and organizational change."
+            f"I would be glad to explore advisory support around {role.lower()}, "
+            f"particularly where product, AI, and organizational change need to move "
+            f"in concert rather than in parallel."
         ),
         "Share insight": (
-            "As someone with direct experience in this space, I would like to share "
-            "a few practical insights that may be useful to your team."
+            "Having worked directly in this space, I would value the chance to share "
+            "a few practical observations that may be useful to your team."
         ),
         "Request conversation": (
-            f"I would welcome a short conversation about how a {role.lower()} "
-            f"collaboration could create value for {company_name}."
+            f"I would welcome a brief conversation about how a {role.lower()} "
+            f"collaboration could create meaningful value for {company_name}."
         ),
         "Send introduction email": (
             f"I would appreciate an introduction to the right person at {company_name} "
-            f"to explore a potential collaboration."
+            f"to explore a potential collaboration with care and intent."
         ),
         "Send LinkedIn message": (
-            f"I would welcome a brief conversation about opportunity creation in "
+            f"I would welcome a short conversation about opportunity creation in "
             f"{company['theme']} at {company_name}."
         ),
         "Do nothing yet": (
-            "I am continuing research before outreach, but wanted to note this "
-            "opportunity for future follow-up."
+            "I am continuing to research this space before outreach, but wanted to "
+            "note the opportunity for a considered follow-up when the moment is right."
         ),
     }
     body_action = action_lines.get(
         action,
-        f"I would welcome a conversation about how I might contribute as "
-        f"{role}.",
+        f"I would welcome a conversation about how I might contribute as {role}.",
     )
     subject = f"Opportunity to explore {role} with {company_name}"
     if contact:
         subject = f"{contact['name']} — opportunity to explore {role} with {company_name}"
+    capabilities = ", ".join(profile["capabilities"][:4]).lower()
     body = (
         f"{greeting}\n\n"
         f"{opener}\n\n"
         f"{body_action}\n\n"
-        f"My background spans {', '.join(profile['capabilities'][:4]).lower()}, "
-        f"and I am especially interested in founder-led environments where "
-        f"multipotentialite operators can connect ideas, products, and systems.\n\n"
+        f"My background spans {capabilities}, and I am especially drawn to "
+        f"founder-led environments where ideas, products, and systems can be "
+        f"woven together with clarity and pace.\n\n"
         f"Would you be open to a short conversation?\n\n"
-        f"Best,\n{profile['name']}"
+        f"Warm regards,\n{profile['name']}"
     )
     return subject, body
 
@@ -485,13 +495,14 @@ def build_action_record(
         company, recommended_action, report, learning_state, patterns, confidence
     )
     opportunity_summary = build_opportunity_summary(company, report)
+    opportunity_bullets = build_opportunity_bullets(company, report)
     contact_recs = get_contact_recommendations(
         company["company"], recommended_action
     )
     target_contact = contact_summary(contact_recs["primary"])
     if target_contact:
         why_recommended.append(
-            f"Primary outreach contact: {target_contact['name']} "
+            f"Pehle inko reach karo: {target_contact['name']} "
             f"({target_contact['title']})."
         )
     timestamp = now_iso()
@@ -507,6 +518,7 @@ def build_action_record(
     return {
         "action_id": action_id,
         "opportunity_summary": opportunity_summary,
+        "opportunity_bullets": opportunity_bullets,
         "recommended_action": recommended_action,
         "confidence_score": confidence,
         "why_recommended": why_recommended,
