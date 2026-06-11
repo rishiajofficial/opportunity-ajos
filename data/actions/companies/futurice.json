@@ -1,0 +1,54 @@
+{
+  "entity_type": "company",
+  "entity_id": "Futurice",
+  "actions": [
+    {
+      "action_id": "2026-06-11T12:13:54+00:00-58f6db13",
+      "opportunity_summary": "AJ could act as a connective strategist across ambiguous client mandates: translating AI ambition into teachable methods, linking education and future-of-work themes to enterprise transformation, and helping Futurice incubate cross-sector propositions beyond one-off projects.",
+      "recommended_action": "Offer advisory support",
+      "confidence_score": 77,
+      "why_recommended": [
+        "AJ previously liked this opportunity.",
+        "Company intelligence brief is available to ground outreach.",
+        "Intelligence entry points suggest a concrete collaboration path.",
+        "Confidence score: 77/100."
+      ],
+      "theme": "Future of Work",
+      "country": "Finland",
+      "suggested_role": "Innovation Partner in Residence",
+      "status": "Suggested",
+      "status_history": [
+        {
+          "status": "Suggested",
+          "timestamp": "2026-06-11T12:13:54+00:00",
+          "note": "AJOS generated this action recommendation."
+        }
+      ],
+      "drafts": {
+        "email": {
+          "subject": "Harri Kiljander \u2014 opportunity to explore Innovation Partner in Residence with Futurice",
+          "body": "Hello Harri Kiljander,\n\nI have been following Futurice's work \u2014 Futurice is a European digital innovation and software consultancy. It helps organizations design, build, and scale digital products and services, with studios across Finland, Germ.\n\nI would like to explore advisory support around innovation partner in residence and how AJ can help connect product, AI, and organizational change.\n\nMy background spans systems thinking, product strategy, ai transformation, innovation, and I am especially interested in founder-led environments where multipotentialite operators can connect ideas, products, and systems.\n\nWould you be open to a short conversation?\n\nBest,\nAnkit",
+          "updated_at": "2026-06-11T12:19:26+00:00"
+        },
+        "linkedin": {
+          "body": "Hello Harri Kiljander, I have been following Futurice's work \u2014 Futurice is a European digital innovation and software consultancy. It helps organizations design, build, and scale digital products and services, with studios across Finland, Germ. I would like to explore advisory support around innovation partner in residence and how AJ can help connect product, AI, and organizational change.",
+          "updated_at": "2026-06-11T12:19:26+00:00"
+        }
+      },
+      "generated_at": "2026-06-11T12:13:54+00:00",
+      "updated_at": "2026-06-11T12:19:26+00:00",
+      "target_contact": {
+        "contact_id": "futurice-harri-kiljander",
+        "name": "Harri Kiljander",
+        "title": "Co-founder",
+        "why_they_matter": "Co-founder influence makes Harri a strong route for exploratory conversations about innovation partnerships, advisory work, or in-residence style collaborations.",
+        "priority_score": 92,
+        "source_url": "https://www.futurice.com/about",
+        "role_tags": [
+          "founder",
+          "ceo"
+        ]
+      }
+    }
+  ]
+}

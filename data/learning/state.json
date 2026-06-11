@@ -1,15 +1,104 @@
 {
-  "answers": [],
-  "feedback": [],
+  "answers": [
+    {
+      "question_id": "preferred_themes",
+      "question": "Which themes should AJOS prioritize when discovering opportunities?",
+      "answer": [
+        "Human Potential",
+        "Wellness & Mental Wellbeing"
+      ],
+      "signal": "theme",
+      "timestamp": "2026-06-10T11:16:56+00:00"
+    }
+  ],
+  "feedback": [
+    {
+      "company": "Futurice",
+      "country": "Finland",
+      "theme": "Future of Work",
+      "suggested_role": "Innovation Partner in Residence",
+      "rating": "Like",
+      "reason": "Looks relevant. Need to understand more, there should be more about the company, what they are doing currently, wqhat kind of clients they have, and what are they looking for - in the roles generally? Which are the in demand roles at that company.",
+      "timestamp": "2026-06-10T11:16:12+00:00"
+    },
+    {
+      "company": "Graphy",
+      "country": "India",
+      "theme": "Creator Economy",
+      "suggested_role": "Creator Education Founder in Residence",
+      "rating": "Like",
+      "reason": "This one is, quite apt. Because I have used the product also. As a teacher. I understand it. And I have created courses on it, and have felt it can have a better UI. There should be more feedback options in your feedback collection system.",
+      "timestamp": "2026-06-10T11:19:41+00:00"
+    }
+  ],
   "outcomes": [],
   "alignment_memory": {
-    "preferences": [],
-    "answers": [],
+    "preferences": [
+      {
+        "type": "theme",
+        "value": [
+          "Human Potential",
+          "Wellness & Mental Wellbeing"
+        ],
+        "evidence": "preferred_themes",
+        "timestamp": "2026-06-10T11:16:56+00:00"
+      }
+    ],
+    "answers": [
+      {
+        "question_id": "preferred_themes",
+        "question": "Which themes should AJOS prioritize when discovering opportunities?",
+        "answer": [
+          "Human Potential",
+          "Wellness & Mental Wellbeing"
+        ],
+        "signal": "theme",
+        "timestamp": "2026-06-10T11:16:56+00:00"
+      }
+    ],
     "actions": [],
-    "opportunity_signals": [],
+    "opportunity_signals": [
+      {
+        "direction": "positive",
+        "type": "company_feedback",
+        "value": "Futurice",
+        "evidence": "Like"
+      },
+      {
+        "direction": "positive",
+        "type": "company_feedback",
+        "value": "Graphy",
+        "evidence": "Like"
+      }
+    ],
     "founder_signals": [],
-    "facts": [],
+    "facts": [
+      {
+        "statement": "AJ answered 'Which themes should AJOS prioritize when discovering opportunities?' with: Human Potential, Wellness & Mental Wellbeing.",
+        "source": "answer",
+        "timestamp": "2026-06-10T11:16:56+00:00"
+      },
+      {
+        "statement": "AJ rated Futurice as Like. Reason: Looks relevant. Need to understand more, there should be more about the company, what they are doing currently, wqhat kind of clients they have, and what are they looking for - in the roles generally? Which are the in demand roles at that company.",
+        "source": "feedback",
+        "timestamp": "2026-06-10T11:16:12+00:00"
+      },
+      {
+        "statement": "AJ rated Graphy as Like. Reason: This one is, quite apt. Because I have used the product also. As a teacher. I understand it. And I have created courses on it, and have felt it can have a better UI. There should be more feedback options in your feedback collection system.",
+        "source": "feedback",
+        "timestamp": "2026-06-10T11:19:41+00:00"
+      }
+    ],
     "beliefs": [],
-    "hypotheses": []
+    "hypotheses": [
+      {
+        "statement": "Alignment with Future of Work may depend on the specific company, role, or founder.",
+        "evidence_count": 1
+      },
+      {
+        "statement": "Alignment with Creator Economy may depend on the specific company, role, or founder.",
+        "evidence_count": 1
+      }
+    ]
   }
 }

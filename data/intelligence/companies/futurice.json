@@ -1,0 +1,121 @@
+{
+  "entity_type": "company",
+  "entity_id": "Futurice",
+  "website": "https://www.futurice.com",
+  "current_report_id": "2026-06-11T14:00:00+00:00",
+  "reports": [
+    {
+      "report_id": "2026-06-11T14:00:00+00:00",
+      "researched_at": "2026-06-11T14:00:00+00:00",
+      "refresh_method": "manual",
+      "refreshed_by": "aj",
+      "sources": [
+        {
+          "url": "https://www.futurice.com",
+          "label": "Futurice website",
+          "accessed_at": "2026-06-11T14:00:00+00:00"
+        },
+        {
+          "url": "https://www.futurice.com/services",
+          "label": "Services overview",
+          "accessed_at": "2026-06-11T14:00:00+00:00"
+        },
+        {
+          "url": "https://www.futurice.com/cases",
+          "label": "Case studies",
+          "accessed_at": "2026-06-11T14:00:00+00:00"
+        },
+        {
+          "url": "https://www.linkedin.com/company/futurice/jobs",
+          "label": "LinkedIn jobs",
+          "accessed_at": "2026-06-11T14:00:00+00:00"
+        }
+      ],
+      "sections": [
+        {
+          "id": "what_they_do",
+          "title": "What does this company do?",
+          "kind": "fact",
+          "content": "Futurice is a European digital innovation and software consultancy. It helps organizations design, build, and scale digital products and services, with studios across Finland, Germany, the UK, Sweden, and Switzerland.",
+          "source_urls": [
+            "https://www.futurice.com"
+          ]
+        },
+        {
+          "id": "customers",
+          "title": "Who are its customers?",
+          "kind": "observation",
+          "content": "Primarily enterprise and mid-market organizations undergoing digital transformation. Public case work spans finance, retail, media, public sector, and industrial clients seeking product innovation rather than commodity software delivery.",
+          "source_urls": [
+            "https://www.futurice.com/cases"
+          ]
+        },
+        {
+          "id": "products_and_services",
+          "title": "What products or services does it offer?",
+          "kind": "fact",
+          "content": "Core offerings include product strategy, service design, custom software development, data and AI solutions, cloud engineering, and organizational change support. Futurice also runs internal ventures and open-source initiatives alongside client work.",
+          "source_urls": [
+            "https://www.futurice.com/services"
+          ]
+        },
+        {
+          "id": "business_model",
+          "title": "What is its business model?",
+          "kind": "observation",
+          "content": "Revenue is driven mainly by consulting engagements, multi-disciplinary project teams, and longer-term innovation partnerships. Some studios productize repeatable methods, but the model remains relationship- and expertise-led rather than SaaS-first.",
+          "source_urls": [
+            "https://www.futurice.com/services"
+          ]
+        },
+        {
+          "id": "recent_developments",
+          "title": "What recent developments matter?",
+          "kind": "observation",
+          "content": "Public positioning increasingly emphasizes AI-native delivery, responsible AI, and practical transformation for large organizations. Blog and case content suggest growing focus on combining generative AI with product discovery, engineering excellence, and change management.",
+          "source_urls": [
+            "https://www.futurice.com/blog"
+          ]
+        },
+        {
+          "id": "hiring_patterns",
+          "title": "What hiring patterns are visible?",
+          "kind": "observation",
+          "content": "Active hiring across product management, software engineering, design, data/AI, and client-facing consulting roles across European offices. Patterns suggest continued investment in cross-functional delivery teams rather than narrow specialist silos.",
+          "source_urls": [
+            "https://www.linkedin.com/company/futurice/jobs"
+          ]
+        },
+        {
+          "id": "strategic_challenges",
+          "title": "What strategic challenges may exist?",
+          "kind": "hypothesis",
+          "content": "Futurice may be balancing bespoke consulting margins with demand for faster, more repeatable AI transformation offerings. Client organizations often want innovation theater converted into durable capability, which requires connective leadership across strategy, product, and delivery.",
+          "source_urls": []
+        },
+        {
+          "id": "value_for_aj",
+          "title": "Why might AJ create value here?",
+          "kind": "hypothesis",
+          "content": "AJ could act as a connective strategist across ambiguous client mandates: translating AI ambition into teachable methods, linking education and future-of-work themes to enterprise transformation, and helping Futurice incubate cross-sector propositions beyond one-off projects.",
+          "source_urls": []
+        },
+        {
+          "id": "potential_entry_points",
+          "title": "Potential entry points",
+          "kind": "hypothesis",
+          "content": "Opportunity-creation paths. These are not job applications.",
+          "items": [
+            "Advisor on AI transformation portfolios for enterprise clients",
+            "Innovation Partner in Residence for a 8-12 week client transformation sprint",
+            "Strategic collaboration on repeatable innovation methods across education and future of work",
+            "Workshop series on turning AI ambition into practical product systems",
+            "Pilot project co-designing a new cross-sector venture concept with an internal Futurice team",
+            "Community contribution through talks, playbooks, or open methods for multipotentialite operators"
+          ],
+          "source_urls": []
+        }
+      ]
+    }
+  ]
+}

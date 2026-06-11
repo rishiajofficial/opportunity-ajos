@@ -34,6 +34,23 @@ pip install -r requirements.txt
 streamlit run app.py
 ```
 
+## Deploy (mobile access from anywhere)
+
+AJOS is a **Streamlit** app. **Vercel is not a good fit** — it targets static
+sites and serverless functions, not long-running Python apps.
+
+Use **[Streamlit Community Cloud](https://share.streamlit.io/)** (free):
+
+1. Push this repo to GitHub.
+2. Sign in at [share.streamlit.io](https://share.streamlit.io/) with GitHub.
+3. Click **New app** → pick this repo, branch `main`, main file `app.py`.
+4. Deploy. You get a URL like `https://your-app.streamlit.app` — open it on
+   your phone from anywhere.
+
+**Note:** Cloud deploys start from the committed JSON in the repo. Local changes
+you make after deploy (feedback, actions, drafts) stay on whichever environment
+you used unless you commit and redeploy, or later add shared storage.
+
 ## Data
 
 `data/companies.csv` contains 12 curated companies across UAE, Singapore,

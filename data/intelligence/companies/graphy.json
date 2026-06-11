@@ -1,0 +1,117 @@
+{
+  "entity_type": "company",
+  "entity_id": "Graphy",
+  "website": "https://graphy.com",
+  "current_report_id": "2026-06-11T14:30:00+00:00",
+  "reports": [
+    {
+      "report_id": "2026-06-11T14:30:00+00:00",
+      "researched_at": "2026-06-11T14:30:00+00:00",
+      "refresh_method": "manual",
+      "refreshed_by": "aj",
+      "sources": [
+        {
+          "url": "https://graphy.com",
+          "label": "Graphy website",
+          "accessed_at": "2026-06-11T14:30:00+00:00"
+        },
+        {
+          "url": "https://graphy.com/features",
+          "label": "Product features",
+          "accessed_at": "2026-06-11T14:30:00+00:00"
+        },
+        {
+          "url": "https://www.linkedin.com/company/graphy/jobs",
+          "label": "LinkedIn jobs",
+          "accessed_at": "2026-06-11T14:30:00+00:00"
+        }
+      ],
+      "sections": [
+        {
+          "id": "what_they_do",
+          "title": "What does this company do?",
+          "kind": "fact",
+          "content": "Graphy is an India-based creator-economy platform that helps educators, coaches, and experts launch and monetize online courses, memberships, and live learning experiences.",
+          "source_urls": [
+            "https://graphy.com"
+          ]
+        },
+        {
+          "id": "customers",
+          "title": "Who are its customers?",
+          "kind": "observation",
+          "content": "Independent educators, coaches, trainers, and subject-matter experts building knowledge businesses, with strong relevance in India and growing creator-education markets globally. Secondary users include learners and community members enrolled in creator programs.",
+          "source_urls": [
+            "https://graphy.com"
+          ]
+        },
+        {
+          "id": "products_and_services",
+          "title": "What products or services does it offer?",
+          "kind": "fact",
+          "content": "Course hosting, community features, payment and checkout flows, mobile apps for creators, marketing tools, live classes, and membership products. Graphy positions itself as an all-in-one stack for creators who want to own audience and revenue.",
+          "source_urls": [
+            "https://graphy.com/features"
+          ]
+        },
+        {
+          "id": "business_model",
+          "title": "What is its business model?",
+          "kind": "observation",
+          "content": "Primarily SaaS subscriptions and platform fees on creator revenue. Growth depends on helping creators succeed quickly, reducing churn, and expanding ARPU through community, live learning, and premium creator tooling.",
+          "source_urls": [
+            "https://graphy.com"
+          ]
+        },
+        {
+          "id": "recent_developments",
+          "title": "What recent developments matter?",
+          "kind": "observation",
+          "content": "Continued competition in the creator-education stack from global and regional players. Product emphasis appears oriented toward mobile creator workflows, community retention, and helping experts move beyond one-off course launches.",
+          "source_urls": [
+            "https://graphy.com/features"
+          ]
+        },
+        {
+          "id": "hiring_patterns",
+          "title": "What hiring patterns are visible?",
+          "kind": "observation",
+          "content": "Hiring signals across product, engineering, growth, and customer success roles typical of a scaling creator SaaS company. AJ has firsthand product familiarity as a teacher and course creator on the platform.",
+          "source_urls": [
+            "https://www.linkedin.com/company/graphy/jobs"
+          ]
+        },
+        {
+          "id": "strategic_challenges",
+          "title": "What strategic challenges may exist?",
+          "kind": "hypothesis",
+          "content": "Graphy may need to differentiate beyond course hosting as creators demand better UX, AI-assisted workflows, community depth, and outcomes beyond transactional course sales. Educator onboarding and product clarity remain critical levers.",
+          "source_urls": []
+        },
+        {
+          "id": "value_for_aj",
+          "title": "Why might AJ create value here?",
+          "kind": "hypothesis",
+          "content": "AJ brings lived educator experience on Graphy plus systems thinking across product, teaching, and creator business models. He could help shape educator onboarding, AI-enabled creator workflows, and product strategy grounded in real classroom and course-creation friction.",
+          "source_urls": []
+        },
+        {
+          "id": "potential_entry_points",
+          "title": "Potential entry points",
+          "kind": "hypothesis",
+          "content": "Opportunity-creation paths. These are not job applications.",
+          "items": [
+            "Product feedback and structured educator-in-residence sessions based on real teaching use",
+            "Advisor on educator onboarding and creator workflow design",
+            "Pilot project for AI-assisted course creation and community engagement",
+            "Workshop with product and design on multipotentialite educator journeys",
+            "Strategic collaboration on creator-education propositions beyond course transactions",
+            "Fractional product strategy support for a focused creator-experience sprint",
+            "Community contribution through educator playbooks, case studies, or teaching labs"
+          ],
+          "source_urls": []
+        }
+      ]
+    }
+  ]
+}

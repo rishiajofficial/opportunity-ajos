@@ -29,6 +29,13 @@ POSITIVE_OUTCOMES = {
     "Opportunity Created",
 }
 
+ACTION_STATUS_ADJUSTMENTS = {
+    "Sent": 8,
+    "Replied": 10,
+    "Meeting Scheduled": 12,
+    "Opportunity Created": 14,
+}
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat(timespec="seconds")
@@ -152,6 +159,14 @@ def persist_learning(state: dict[str, Any]) -> dict[str, Any]:
     return state
 
 
+def get_action_memory_signals() -> list[dict[str, Any]]:
+    try:
+        from action_engine import get_action_signals_for_memory
+    except ImportError:
+        return []
+    return get_action_signals_for_memory()
+
+
 def build_alignment_memory(
     state: dict[str, Any], questions: list[dict[str, Any]]
 ) -> dict[str, list]:
@@ -160,6 +175,7 @@ def build_alignment_memory(
     latest_answers = latest_by(state["answers"], "question_id")
     latest_feedback = latest_by(state["feedback"], "company")
     latest_outcomes = latest_by(state["outcomes"], "company")
+    action_signals = get_action_memory_signals()
 
     for answer in state["answers"]:
         memory["answers"].append(answer.copy())
@@ -212,6 +228,38 @@ def build_alignment_memory(
             }
         )
 
+    for signal in action_signals:
+        memory["actions"].append(
+            {
+                "company": signal["entity_id"],
+                "outcome": signal["status"],
+                "timestamp": signal["timestamp"],
+            }
+        )
+        memory["facts"].append(
+            {
+                "statement": (
+                    f"{signal['entity_id']} action '{signal['recommended_action']}' "
+                    f"reached status {signal['status']}."
+                ),
+                "source": "action_engine",
+                "timestamp": signal["timestamp"],
+            }
+        )
+        direction = (
+            "positive"
+            if signal["weight"] > 0
+            else "negative" if signal["weight"] < 0 else "neutral"
+        )
+        memory["opportunity_signals"].append(
+            {
+                "direction": direction,
+                "type": "action_outcome",
+                "value": signal["entity_id"],
+                "evidence": signal["status"],
+            }
+        )
+
     theme_evidence: dict[str, list[int]] = defaultdict(list)
     for feedback in latest_feedback.values():
         direction = FEEDBACK_ADJUSTMENTS[feedback["rating"]]
@@ -236,6 +284,26 @@ def build_alignment_memory(
                 "evidence": outcome["outcome"],
             }
         )
+
+    action_theme_evidence: dict[str, list[int]] = defaultdict(list)
+    for signal in action_signals:
+        if signal["status"] not in ACTION_STATUS_ADJUSTMENTS:
+            continue
+        adjustment = ACTION_STATUS_ADJUSTMENTS[signal["status"]]
+        action_theme_evidence[signal["theme"]].append(adjustment)
+        theme_evidence[signal["theme"]].append(adjustment)
+
+    for theme, evidence in action_theme_evidence.items():
+        if len(evidence) >= 2 and all(value > 0 for value in evidence):
+            memory["beliefs"].append(
+                {
+                    "statement": (
+                        f"Action outcomes in {theme} suggest this theme converts "
+                        "well into real conversations."
+                    ),
+                    "evidence_count": len(evidence),
+                }
+            )
 
     for theme, evidence in theme_evidence.items():
         non_zero = [value for value in evidence if value]
@@ -354,6 +422,18 @@ def calculate_personalization(
         if matched:
             score += 1
             reasons.append(f"Matches collaboration preference: {matched[0]} (+1)")
+
+    try:
+        from action_engine import get_action_pattern_adjustment, load_action_patterns
+
+        action_adjustment, action_reasons = get_action_pattern_adjustment(
+            company, load_action_patterns()
+        )
+        if action_adjustment:
+            score += action_adjustment
+            reasons.extend(action_reasons)
+    except ImportError:
+        pass
 
     adjustment = max(-10, min(10, score))
     if adjustment != score:

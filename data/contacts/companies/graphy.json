@@ -1,0 +1,52 @@
+{
+  "entity_type": "company",
+  "entity_id": "Graphy",
+  "updated_at": "2026-06-11T18:00:00+00:00",
+  "contacts": [
+    {
+      "contact_id": "graphy-sumit-munjal",
+      "name": "Sumit Munjal",
+      "title": "Founder & CEO",
+      "why_they_matter": "As founder and CEO, Sumit is the decisive contact for strategic conversations about creator education, product direction, and unconventional founder-in-residence style collaborations.",
+      "priority_score": 95,
+      "source_url": "https://graphy.com",
+      "role_tags": ["founder", "ceo"]
+    },
+    {
+      "contact_id": "graphy-product-lead",
+      "name": "Product leadership contact",
+      "title": "Head of Product",
+      "why_they_matter": "Best contact for educator workflow feedback, product insight, and pilot ideas grounded in real creator and teacher experience on the platform.",
+      "priority_score": 90,
+      "source_url": "https://graphy.com/features",
+      "role_tags": ["head_of_product"]
+    },
+    {
+      "contact_id": "graphy-education-lead",
+      "name": "Creator education lead",
+      "title": "Head of Education / Creator Success",
+      "why_they_matter": "Likely owns educator onboarding, creator success, and teaching-led growth — highly relevant for AJ's firsthand product and classroom perspective.",
+      "priority_score": 89,
+      "source_url": "https://graphy.com/features",
+      "role_tags": ["head_of_education"]
+    },
+    {
+      "contact_id": "graphy-partnerships-lead",
+      "name": "Partnerships lead",
+      "title": "Head of Partnerships",
+      "why_they_matter": "Appropriate for strategic collaboration proposals, ecosystem partnerships, and creator-community initiatives beyond core product feedback.",
+      "priority_score": 83,
+      "source_url": "https://graphy.com",
+      "role_tags": ["head_of_partnerships"]
+    },
+    {
+      "contact_id": "graphy-growth-lead",
+      "name": "Growth leadership contact",
+      "title": "Head of Growth",
+      "why_they_matter": "Useful secondary route for workshops, community contributions, and insight-sharing that could support creator acquisition and retention.",
+      "priority_score": 78,
+      "source_url": "https://graphy.com",
+      "role_tags": ["head_of_growth"]
+    }
+  ]
+}
