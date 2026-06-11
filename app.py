@@ -1,5 +1,7 @@
+import html
 import json
 import os
+import textwrap
 from pathlib import Path
 
 import pandas as pd
@@ -221,8 +223,39 @@ APP_CSS = """
         line-height: 1.45;
         margin-bottom: 0.35rem;
     }
+    .company-card .app-shell-title {
+        color: rgba(255,255,255,0.75);
+    }
+    div[data-testid="stButton"]:has(button[kind="primary"]) button {
+        background: linear-gradient(135deg, #173f34 0%, #28705a 100%) !important;
+        border: none !important;
+        color: #fff !important;
+        font-weight: 800 !important;
+        min-height: 2.75rem;
+    }
+    #review-actions-letgo ~ div[data-testid="stButton"] > button {
+        background: #f4f6f5 !important;
+        border: 1px solid #c5d0ca !important;
+        color: #5f6f67 !important;
+        font-weight: 700 !important;
+    }
+    #review-actions-save ~ div[data-testid="stButton"] > button {
+        background: #fff8eb !important;
+        border: 1px solid #e8c878 !important;
+        color: #8a6a1e !important;
+        font-weight: 700 !important;
+    }
 </style>
 """
+
+
+def render_html(markup: str) -> None:
+    lines = [
+        line.strip()
+        for line in textwrap.dedent(markup).splitlines()
+        if line.strip()
+    ]
+    st.html("".join(lines))
 
 
 @st.cache_data
@@ -311,11 +344,10 @@ def render_bullet_list(items: list[str], max_items: int = 4) -> None:
     bullets = [item for item in items if item][:max_items]
     if not bullets:
         return
-    items_html = "".join(f"<li>{item}</li>" for item in bullets)
-    st.markdown(
-        f'<div class="bullet-card"><ul>{items_html}</ul></div>',
-        unsafe_allow_html=True,
+    items_html = "".join(
+        f"<li>{html.escape(str(item))}</li>" for item in bullets
     )
+    st.html(f'<div class="bullet-card"><ul>{items_html}</ul></div>')
 
 
 def companies_as_dicts(companies_df: pd.DataFrame) -> list[dict]:
@@ -358,37 +390,38 @@ def render_company_card(
     label: str = "Opportunity",
     is_discovered: bool = False,
 ) -> None:
+    name = html.escape(str(company["company"]))
+    country = html.escape(str(company["country"]))
+    theme = html.escape(str(company["theme"]))
+    role = html.escape(str(company["suggested_role"]))
+    label_safe = html.escape(label)
     discovered_badge = (
         '<span class="discovered-badge">Discovered</span>' if is_discovered else ""
     )
-    st.markdown(
-        f"""
-        <div class="company-card">
-            <div class="app-shell-title">{label}</div>
-            {discovered_badge}
-            <h2>{company["company"]}</h2>
-            <div class="company-meta">
-                {company["country"]} · {company["theme"]}
-            </div>
-            <span class="score-pill">{int(company["final_score"])}/100 score</span>
-            <span class="score-pill">{company["suggested_role"]}</span>
-        </div>
-        """,
-        unsafe_allow_html=True,
+    render_html(
+        f'<div class="company-card">'
+        f'<div class="app-shell-title">{label_safe}</div>'
+        f"{discovered_badge}"
+        f"<h2>{name}</h2>"
+        f'<div class="company-meta">{country} · {theme}</div>'
+        f'<span class="score-pill">{int(company["final_score"])}/100 score</span>'
+        f'<span class="score-pill">{role}</span>'
+        f"</div>"
     )
 
 
 def render_info_card(label: str, title: str, body: str = "") -> None:
-    body_html = f'<p class="app-card-body">{body}</p>' if body else ""
-    st.markdown(
-        f"""
-        <div class="app-card">
-            <div class="app-card-label">{label}</div>
-            <div class="app-card-title">{title}</div>
-            {body_html}
-        </div>
-        """,
-        unsafe_allow_html=True,
+    label_safe = html.escape(label)
+    title_safe = html.escape(str(title))
+    body_html = (
+        f'<p class="app-card-body">{html.escape(str(body))}</p>' if body else ""
+    )
+    render_html(
+        f'<div class="app-card">'
+        f'<div class="app-card-label">{label_safe}</div>'
+        f'<div class="app-card-title">{title_safe}</div>'
+        f"{body_html}"
+        f"</div>"
     )
 
 
@@ -691,6 +724,42 @@ def render_review_bullets(company: pd.Series) -> None:
     render_bullet_list(bullets, max_items=4)
 
 
+def _handle_review_decision(
+    company: pd.Series,
+    learning_state: dict,
+    decision: str,
+    *,
+    is_discovered: bool = False,
+    candidate_id: str | None = None,
+) -> None:
+    company_dict = company.to_dict()
+    if decision == "pass":
+        if is_discovered and candidate_id:
+            reject_candidate(candidate_id)
+        else:
+            record_review_decision(learning_state, company_dict, "pass")
+    elif decision == "saved":
+        if is_discovered and candidate_id:
+            merged = approve_candidate(candidate_id)
+            load_data.clear()
+            record_review_decision(learning_state, merged, "saved")
+        else:
+            record_review_decision(learning_state, company_dict, "saved")
+    elif decision == "interested":
+        if is_discovered and candidate_id:
+            merged = approve_candidate(candidate_id)
+            load_data.clear()
+            record_review_decision(learning_state, merged, "interested")
+            open_focus_view(merged["company"])
+        else:
+            record_review_decision(learning_state, company_dict, "interested")
+            open_focus_view(company["company"])
+    else:
+        st.session_state.ajos_view = "review"
+        st.session_state.ajos_focus_company = None
+    st.rerun()
+
+
 def render_review_actions(
     company: pd.Series,
     learning_state: dict,
@@ -698,40 +767,42 @@ def render_review_actions(
     is_discovered: bool = False,
     candidate_id: str | None = None,
 ) -> None:
-    company_dict = company.to_dict()
     st.markdown("---")
-    pass_col, save_col, interested_col = st.columns(3)
-    with pass_col:
-        if st.button("Pass", key="review-pass", use_container_width=True):
-            if is_discovered and candidate_id:
-                reject_candidate(candidate_id)
-            else:
-                record_review_decision(learning_state, company_dict, "pass")
-            st.session_state.ajos_view = "review"
-            st.session_state.ajos_focus_company = None
-            st.rerun()
+    if st.button(
+        "Interested",
+        key="review-interested",
+        type="primary",
+        use_container_width=True,
+    ):
+        _handle_review_decision(
+            company,
+            learning_state,
+            "interested",
+            is_discovered=is_discovered,
+            candidate_id=candidate_id,
+        )
+
+    letgo_col, save_col = st.columns(2)
+    with letgo_col:
+        st.markdown('<div id="review-actions-letgo"></div>', unsafe_allow_html=True)
+        if st.button("Let go", key="review-pass", use_container_width=True):
+            _handle_review_decision(
+                company,
+                learning_state,
+                "pass",
+                is_discovered=is_discovered,
+                candidate_id=candidate_id,
+            )
     with save_col:
+        st.markdown('<div id="review-actions-save"></div>', unsafe_allow_html=True)
         if st.button("Save for later", key="review-save", use_container_width=True):
-            if is_discovered and candidate_id:
-                merged = approve_candidate(candidate_id)
-                load_data.clear()
-                record_review_decision(learning_state, merged, "saved")
-            else:
-                record_review_decision(learning_state, company_dict, "saved")
-            st.session_state.ajos_view = "review"
-            st.session_state.ajos_focus_company = None
-            st.rerun()
-    with interested_col:
-        if st.button("Interested", key="review-interested", use_container_width=True):
-            if is_discovered and candidate_id:
-                merged = approve_candidate(candidate_id)
-                load_data.clear()
-                record_review_decision(learning_state, merged, "interested")
-                open_focus_view(merged["company"])
-            else:
-                record_review_decision(learning_state, company_dict, "interested")
-                open_focus_view(company["company"])
-            st.rerun()
+            _handle_review_decision(
+                company,
+                learning_state,
+                "saved",
+                is_discovered=is_discovered,
+                candidate_id=candidate_id,
+            )
 
 
 def render_review_header(
@@ -739,7 +810,17 @@ def render_review_header(
     saved_count: int,
     interested_count: int,
 ) -> None:
-    header_left, header_saved, header_interested = st.columns([2.2, 1, 1.2])
+    if interested_count:
+        if st.button(
+            f"Interested ({interested_count})",
+            key="open-interested",
+            type="primary",
+            use_container_width=True,
+        ):
+            st.session_state.ajos_view = "interested"
+            st.rerun()
+
+    header_left, header_saved = st.columns([2, 1])
     with header_left:
         if queue_size:
             st.caption(f"1 of {queue_size} in queue")
@@ -748,12 +829,6 @@ def render_review_header(
     with header_saved:
         if saved_count and st.button(f"Saved ({saved_count})", key="open-saved"):
             st.session_state.ajos_view = "saved"
-            st.rerun()
-    with header_interested:
-        if interested_count and st.button(
-            f"Interested ({interested_count})", key="open-interested"
-        ):
-            st.session_state.ajos_view = "interested"
             st.rerun()
 
 
