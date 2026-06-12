@@ -88,3 +88,13 @@ At the end of any meaningful agent session, update **today's** file under `highl
 Keep bullets short. Skip trivial turns (e.g. pure git push with no product change) unless it unblocked deploy.
 
 See [`highlights/2026-06-11.md`](highlights/2026-06-11.md) for the reference format.
+
+## Cursor Cloud specific instructions
+
+This repo is a single **Streamlit** app (`app.py`) plus supporting Python engines/CLIs. No build step and no automated test suite exist.
+
+- **Run the app:** `python3 -m streamlit run app.py --server.port 8501 --server.headless true`. The `streamlit` console script installs to `~/.local/bin` (not on `PATH`), so invoke it via `python3 -m streamlit`.
+- **Login gate:** the app stops at a password screen unless `AJOS_PASSWORD` is set. For local/cloud dev, create `.streamlit/secrets.toml` (gitignored) containing `AJOS_PASSWORD = "..."`; alternatively export `AJOS_PASSWORD` as an env var. Without it the app shows "Password not configured" and halts.
+- **No linter / tests configured:** use `python3 -m py_compile *.py scripts/*.py` as a quick syntax/sanity check.
+- **Runtime writes:** giving feedback/actions in the UI mutates files under `data/` (e.g. `companies.csv`, `data/learning/*.json`, `data/actions/...`). After manual testing, `git checkout -- data/` to avoid committing test state.
+- **Optional AI chat / email finder:** `ANTHROPIC_API_KEY`/`OPENAI_API_KEY` enable LLM company chat (falls back to CSV snippets without them); `APOLLO_API_KEY` powers the email finder CLI. None are required to run the dashboard.
