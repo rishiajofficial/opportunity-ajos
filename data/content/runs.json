@@ -1,3 +1,11 @@
 {
-  "runs": []
+  "runs": [
+    {
+      "run_id": "66d03f33-8f37-4c23-ab49-1702cec19ac0",
+      "completed_at": "2026-06-12T15:02:18+00:00",
+      "companies_refined": 1,
+      "companies_skipped": 0,
+      "errors": []
+    }
+  ]
 }
