@@ -36,7 +36,7 @@
           "id": "what_they_do",
           "title": "Ye company kya karti hai?",
           "kind": "fact",
-          "content": "Futurice European digital innovation + software consultancy hai — organizations ko digital products aur services design, build, scale karne mein help karti hai. Finland, Germany, UK, Sweden, Switzerland mein studios.",
+          "content": "Futurice Nordic consultancy hai — enterprise clients ke liye product, design, engineering, transformation; studios Finland se Switzerland tak, client work ke saath internal ventures bhi.",
           "source_urls": ["https://www.futurice.com"]
         },
         {
@@ -86,11 +86,11 @@
           "title": "AJ yahan value kaise create kar sakta hai?",
           "kind": "hypothesis",
           "preview": [
-            "Ambiguous client mandates mein connective strategist ban sakte ho",
-            "AI ambition ko teachable methods mein translate karo",
-            "Education + future of work ko enterprise transformation se link karo"
+            "Yahan multipotentialite survive karta hai — silos kam, ambiguous work zyada",
+            "Client ko innovation theater se durable capability chahiye — tum bridge ho",
+            "AI transformation ko teachable method banao — strategy se delivery tak"
           ],
-          "content": "AJ ambiguous client mandates mein connective strategist ban sakta hai: AI ambition ko teachable methods, education aur future-of-work themes ko enterprise transformation se link, aur one-off projects se aage cross-sector propositions incubate kar sakta hai.",
+          "content": "Futurice pe AJ connective strategist ban sakta hai: client mandates ambiguous hain, silos kam hain. Woh AI ambition ko slides se production tak le jaane wale methods design kar sakta hai — education, work, wellbeing themes ko enterprise transformation se jod kar.",
           "source_urls": []
         },
         {

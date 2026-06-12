@@ -31,7 +31,7 @@
           "id": "what_they_do",
           "title": "Ye company kya karti hai?",
           "kind": "fact",
-          "content": "Graphy India-based creator-economy platform hai — educators, coaches, experts courses, memberships, live learning se monetize karte hain.",
+          "content": "Graphy India-born creator stack hai — educators courses, memberships, live classes chala kar apna business banate hain; payments, app, marketing sab in-house.",
           "source_urls": ["https://graphy.com"]
         },
         {
@@ -81,11 +81,11 @@
           "title": "AJ yahan value kaise create kar sakta hai?",
           "kind": "hypothesis",
           "preview": [
-            "Graphy pe teacher experience hai — real friction pata hai",
-            "Educator onboarding + AI workflows shape kar sakte ho",
-            "Product strategy teaching + creator business se grounded"
+            "Tum khud Graphy pe padhate ho — creator UI pain firsthand hai",
+            "Educator onboarding + AI workflows tum real classroom se shape kar sakte ho",
+            "Course hosting se aage community + outcomes — tum dono lens laate ho"
           ],
-          "content": "AJ Graphy pe lived educator experience laata hai plus product, teaching, creator business models pe systems thinking. Educator onboarding, AI-enabled creator workflows, aur real classroom friction pe grounded product strategy mein help kar sakta hai.",
+          "content": "AJ Graphy ka user + teacher hai. Woh creator pain ko abstract nahi, lived friction se samajhta hai — onboarding, course builder, community depth. Product strategy yahan teaching + creator business + systems thinking se grounded reh sakti hai.",
           "source_urls": []
         },
         {

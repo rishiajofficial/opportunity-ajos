@@ -17,7 +17,16 @@ TOPIC_KEYWORDS: dict[str, tuple[str, ...]] = {
     "recent_developments": ("recent", "news", "latest", "abhi kya", "development"),
     "hiring_patterns": ("hiring", "hire", "jobs", "roles", "recruit"),
     "strategic_challenges": ("challenge", "problem", "risk", "struggle", "issue"),
-    "value_for_aj": ("why fit", "why me", "value", "kyun fit", "create value", "my fit"),
+    "value_for_aj": (
+        "why fit",
+        "why me",
+        "value",
+        "kyun fit",
+        "kaise fit",
+        "main fit",
+        "create value",
+        "my fit",
+    ),
     "potential_entry_points": ("entry", "how to approach", "collaboration", "partnership", "start"),
     "contacts": ("contact", "who to reach", "email who", "founder", "ceo", "kisko"),
     "why_fit_csv": ("opportunity", "alignment", "score", "role"),
@@ -75,13 +84,27 @@ def load_report(company_name: str) -> dict[str, Any] | None:
 
 def suggested_questions(has_intel: bool) -> list[str]:
     base = [
-        "What do they do?",
-        "Why might I fit here?",
-        "What could I help solve?",
+        "Ye company kya karti hai?",
+        "Main yahan kaise fit hoon?",
+        "Main kya solve kar sakta hoon?",
     ]
     if has_intel:
-        base.extend(["Who are their customers?", "How could I approach them?"])
+        base.extend(["Customers kaun hain?", "Approach kaise karoon?"])
     return base[:5]
+
+
+def _csv_bullets(field: str, max_items: int = 3) -> list[str]:
+    text = str(field or "").strip()
+    if not text:
+        return []
+    if ";" in text:
+        return [part.strip() for part in text.split(";") if part.strip()][:max_items]
+    return [text[:220]]
+
+
+def _company_pitch(company: dict[str, Any]) -> list[str]:
+    desc = str(company.get("description", "")).strip()
+    return [desc] if desc else []
 
 
 def answer_company_question(
@@ -120,49 +143,52 @@ def answer_company_question(
     answers: list[str] = []
 
     for topic in topics:
-        if topic == "why_fit_csv":
-            why = str(company.get("why_fit", "")).strip()
-            if why:
-                parts = [part.strip() for part in why.split(";") if part.strip()]
-                answers.extend(parts[:3])
+        if topic == "what_they_do":
+            answers.extend(_company_pitch(company))
+            if report:
+                section = _section_by_id(report, "what_they_do")
+                answers.extend(_bullets_from_section(section, max_items=1))
+            continue
+        if topic in {"value_for_aj", "why_fit_csv"}:
+            answers.extend(_csv_bullets(company.get("why_fit", ""), max_items=3))
+            if report and len(answers) < 3:
+                section = _section_by_id(report, "value_for_aj")
+                answers.extend(_bullets_from_section(section, max_items=2))
             continue
         if topic == "problems":
-            problems = str(company.get("problems_to_solve", "")).strip()
-            if problems:
-                parts = [part.strip() for part in problems.split(";") if part.strip()]
-                answers.extend(parts[:3])
+            answers.extend(_csv_bullets(company.get("problems_to_solve", ""), max_items=3))
             continue
         if topic == "contacts":
             recs = get_contact_recommendations(company["company"])
             primary = recs.get("primary")
             if primary:
                 answers.append(
-                    f"Try first: {primary['name']} ({primary['title']})"
+                    f"Pehle try karo: {primary['name']} ({primary['title']})"
                 )
                 answers.append(primary["why_they_matter"])
             else:
-                answers.append("Abhi contacts file mein nahi — website se explore karo.")
+                answers.append("Abhi contacts file mein nahi — pehle fit samjho, phir reach.")
+            continue
+        if topic == "potential_entry_points" and report:
+            section = _section_by_id(report, "potential_entry_points")
+            answers.extend(_bullets_from_section(section, max_items=3))
             continue
         if report:
             section = _section_by_id(report, topic)
-            title = section.get("title", topic) if section else topic
-            bullets = _bullets_from_section(section)
-            if bullets:
-                answers.append(f"{title}")
-                answers.extend(bullets[:2])
-        elif topic in {"what_they_do", "value_for_aj"}:
-            desc = str(company.get("description", "")).strip()
-            if desc:
-                answers.append(desc)
+            answers.extend(_bullets_from_section(section, max_items=2))
 
     if not answers:
-        if report:
-            section = _section_by_id(report, "what_they_do")
-            answers = _bullets_from_section(section, max_items=2)
-        if not answers:
-            answers = [
-                str(company.get("description", "")).strip() or "Is company pe abhi limited detail hai.",
-                "Try: what do they do / why fit / what problems / how to approach.",
-            ]
+        answers = (
+            _company_pitch(company)
+            or _csv_bullets(company.get("why_fit", ""), max_items=2)
+            or ["Is company pe detail kam hai — specific sawaal poocho."]
+        )
 
-    return answers[:4]
+    seen: set[str] = set()
+    unique: list[str] = []
+    for line in answers:
+        key = line.strip().lower()
+        if key and key not in seen:
+            seen.add(key)
+            unique.append(line.strip())
+    return unique[:4]

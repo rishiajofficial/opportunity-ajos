@@ -29,6 +29,12 @@ from company_intelligence import (
     load_company_intelligence,
 )
 from contact_discovery import contacts_status, get_contact_recommendations
+from content_engine import (
+    get_last_run as get_content_last_run,
+    get_pending_refinements,
+    load_config as load_content_config,
+    queue_for_refinement,
+)
 from discovery_engine import (
     approve_candidate,
     build_review_queue,
@@ -39,18 +45,25 @@ from discovery_engine import (
 )
 from learning import (
     answer_question,
+    approve_dev_feedback,
     calculate_personalization,
+    dismiss_dev_feedback,
     generate_insights,
     generate_proposals,
     get_interested_companies,
     get_open_questions,
     get_saved_companies,
+    is_question_answered,
+    latest_answer_for,
+    load_dev_agent_queue,
     load_questions,
     load_state,
     persist_learning,
     record_feedback,
     record_outcome,
     record_review_decision,
+    skip_question,
+    submit_dev_feedback,
 )
 
 
@@ -254,6 +267,12 @@ APP_CSS = """
         color: #8a6a1e !important;
         font-weight: 700 !important;
     }
+    #review-actions-unclear ~ div[data-testid="stButton"] > button {
+        background: #f8f4f4 !important;
+        border: 1px solid #d8c8c8 !important;
+        color: #7a5a5a !important;
+        font-weight: 700 !important;
+    }
 </style>
 """
 
@@ -313,7 +332,7 @@ def truncate(text: str, limit: int = 140) -> str:
     return cleaned[: limit - 1].rstrip() + "…"
 
 
-def shorten_bullet(text: str, max_words: int = 12) -> str:
+def shorten_bullet(text: str, max_words: int = 16) -> str:
     words = str(text).split()
     if len(words) <= max_words:
         return str(text).strip()
@@ -399,7 +418,7 @@ def render_company_chat(
     report = load_report(company_name)
     has_intel = report is not None
 
-    st.caption("Ask anything — answers come from research on file.")
+    st.caption("Jo poochna ho likho — jawab research + fit analysis se aayega.")
     render_chat_messages(company_name)
 
     suggest_cols = st.columns(min(3, len(suggested_questions(has_intel))))
@@ -463,13 +482,21 @@ def render_occasional_feedback(
             )
         else:
             answer = st.text_input("Your answer", label_visibility="collapsed")
-        if st.form_submit_button("Save", use_container_width=True):
+        save_col, skip_col = st.columns(2)
+        with save_col:
+            save_clicked = st.form_submit_button("Save", use_container_width=True)
+        with skip_col:
+            skip_clicked = st.form_submit_button("Skip", use_container_width=True)
+        if save_clicked:
             has_answer = (
                 bool(answer) if isinstance(answer, list) else bool(str(answer).strip())
             )
             if has_answer:
                 answer_question(learning_state, question, answer)
                 st.rerun()
+        elif skip_clicked:
+            skip_question(learning_state, question)
+            st.rerun()
 
 
 def open_focus_view(company_name: str) -> None:
@@ -767,56 +794,154 @@ def render_track_tab(
             st.caption(item.get("updated_at", item.get("generated_at", "")))
 
 
+def render_answered_questions_summary(
+    learning_state: dict, questions: list[dict]
+) -> None:
+    answered = [
+        question
+        for question in questions
+        if is_question_answered(learning_state, question["id"])
+    ]
+    if not answered:
+        return
+    for question in answered:
+        record = latest_answer_for(learning_state, question["id"])
+        if not record:
+            continue
+        answer_text = record["answer"]
+        if isinstance(answer_text, list):
+            answer_text = ", ".join(answer_text)
+        st.caption(f"**{truncate(question['prompt'], 70)}** — {answer_text}")
+
+
+def render_question_form(
+    learning_state: dict,
+    question: dict,
+    *,
+    form_key_suffix: str = "",
+) -> None:
+    previous_answer = latest_answer_for(learning_state, question["id"])
+    default_value = (
+        previous_answer["answer"]
+        if previous_answer
+        else ([] if question["type"] == "multiselect" else "")
+    )
+    with st.form(f"question-{question['id']}{form_key_suffix}"):
+        if question["type"] == "multiselect":
+            answer = st.multiselect(
+                question["prompt"],
+                question["options"],
+                default=default_value,
+                label_visibility="collapsed",
+            )
+        else:
+            answer = st.text_area(
+                question["prompt"],
+                value=default_value,
+                label_visibility="collapsed",
+            )
+        save_col, skip_col = st.columns(2)
+        with save_col:
+            save_clicked = st.form_submit_button("Save answer", use_container_width=True)
+        with skip_col:
+            skip_clicked = st.form_submit_button("Skip for now", use_container_width=True)
+        if save_clicked:
+            has_answer = (
+                bool(answer) if isinstance(answer, list) else bool(str(answer).strip())
+            )
+            if has_answer:
+                answer_question(learning_state, question, answer)
+                st.rerun()
+            else:
+                st.warning("Write something first.")
+        elif skip_clicked:
+            skip_question(learning_state, question)
+            st.rerun()
+
+
+def render_dev_proposals(proposals: dict) -> None:
+    dev_proposals = proposals.get("dev_proposals", [])
+    if not dev_proposals:
+        st.caption("No pending dev feedback proposals.")
+        return
+    for item in dev_proposals:
+        st.markdown(f"**{item['feedback']}**")
+        st.caption(item["suggested_action"])
+        approve_col, dismiss_col = st.columns(2)
+        with approve_col:
+            if st.button(
+                "Approve",
+                key=f"dev-approve-{item['id']}",
+                use_container_width=True,
+                type="primary",
+            ):
+                approve_dev_feedback(item["id"])
+                st.success(
+                    "Queued for dev agent — push to GitHub or automation will pick up."
+                )
+                st.rerun()
+        with dismiss_col:
+            if st.button(
+                "Dismiss",
+                key=f"dev-dismiss-{item['id']}",
+                use_container_width=True,
+            ):
+                dismiss_dev_feedback(item["id"])
+                st.rerun()
+
+
+def render_dev_feedback_panel() -> None:
+    with st.expander("Dev feedback", expanded=False):
+        st.caption(
+            "Product or code feedback. Approved items queue for the development agent."
+        )
+        feedback_text = st.text_area(
+            "What should we build or fix?",
+            height=100,
+            key="dev-feedback-input",
+            label_visibility="collapsed",
+            placeholder="e.g. Learning questions keep repeating after I answer them",
+        )
+        if st.button("Submit feedback", key="dev-feedback-submit", type="primary"):
+            try:
+                submit_dev_feedback(feedback_text)
+                st.success("Feedback saved. Check Proposals in AJOS learning.")
+                st.rerun()
+            except ValueError as error:
+                st.warning(str(error))
+
+        queue = load_dev_agent_queue()
+        queued = [item for item in queue.get("items", []) if item.get("status") == "queued"]
+        if queued:
+            st.caption(f"{len(queued)} item(s) queued for dev agent.")
+
+
 def render_learn_tab(learning_state: dict, questions: list[dict]) -> None:
     open_questions = get_open_questions(learning_state, questions)
     if open_questions:
         question = open_questions[0]
         render_info_card("Question", truncate(question["prompt"], 90))
+        render_question_form(learning_state, question)
     else:
-        st.caption("All questions answered. Reopen one below.")
-        question_labels = {item["prompt"]: item for item in questions}
-        selected_prompt = st.selectbox(
-            "Reopen question",
-            question_labels,
-            label_visibility="collapsed",
-        )
-        question = question_labels[selected_prompt]
-
-    if questions:
-        previous_answer = next(
-            (
-                item["answer"]
-                for item in reversed(learning_state["answers"])
-                if item["question_id"] == question["id"]
-            ),
-            [] if question["type"] == "multiselect" else "",
-        )
-        with st.form(f"question-{question['id']}"):
-            if question["type"] == "multiselect":
-                answer = st.multiselect(
-                    question["prompt"],
-                    question["options"],
-                    default=previous_answer,
-                    label_visibility="collapsed",
-                )
-            else:
-                answer = st.text_area(
-                    question["prompt"],
-                    value=previous_answer,
-                    label_visibility="collapsed",
-                )
-            if st.form_submit_button("Save answer", use_container_width=True):
-                has_answer = (
-                    bool(answer) if isinstance(answer, list) else bool(answer.strip())
-                )
-                if has_answer:
-                    answer_question(learning_state, question, answer)
-                    st.rerun()
-                else:
-                    st.warning("Write something first.")
+        st.caption("Core questions complete.")
+        render_answered_questions_summary(learning_state, questions)
+        with st.expander("Update an answer", expanded=False):
+            question_labels = {item["prompt"]: item for item in questions}
+            selected_prompt = st.selectbox(
+                "Choose question",
+                question_labels,
+                label_visibility="collapsed",
+            )
+            render_question_form(
+                learning_state,
+                question_labels[selected_prompt],
+                form_key_suffix="-reopen",
+            )
 
     insights = generate_insights(learning_state, questions)
     proposals = generate_proposals(learning_state, questions)
+    with st.expander("Dev proposals", expanded=bool(proposals.get("dev_proposals"))):
+        render_dev_proposals(proposals)
     with st.expander("What AJOS learned", expanded=False):
         render_list(insights["learned"], "Nothing learned yet.")
         render_list(insights["hypotheses"], "No hypotheses yet.")
@@ -826,9 +951,10 @@ def render_learn_tab(learning_state: dict, questions: list[dict]) -> None:
             "scoring_suggestions": "Scoring",
             "roadmap_suggestions": "Roadmap",
             "feature_suggestions": "Features",
+            "content_suggestions": "Copy to refine",
         }.items():
             st.markdown(f"**{label}**")
-            render_list(proposals[key], "Nothing yet.")
+            render_list(proposals.get(key, []), "Nothing yet.")
 
 
 def render_list(items: list[str], empty_message: str) -> None:
@@ -840,8 +966,10 @@ def render_list(items: list[str], empty_message: str) -> None:
 
 
 def render_review_bullets(company: pd.Series) -> None:
-    bullets = split_bullets(company["why_fit"], 3) + split_bullets(
-        company["problems_to_solve"], 2
+    bullets = (
+        split_bullets(company.get("description", ""), 1)
+        + split_bullets(company["why_fit"], 2)
+        + split_bullets(company["problems_to_solve"], 1)
     )
     render_bullet_list(bullets, max_items=4)
 
@@ -853,6 +981,7 @@ def _handle_review_decision(
     *,
     is_discovered: bool = False,
     candidate_id: str | None = None,
+    reason: str = "",
 ) -> None:
     company_dict = company.to_dict()
     if decision == "pass":
@@ -876,6 +1005,13 @@ def _handle_review_decision(
         else:
             record_review_decision(learning_state, company_dict, "interested")
             open_focus_view(company["company"])
+    elif decision == "unclear":
+        if is_discovered and candidate_id:
+            reject_candidate(candidate_id, reason=reason or "Copy unclear")
+        record_review_decision(learning_state, company_dict, "unclear", reason)
+        if not is_discovered:
+            queue_for_refinement(company_dict, reason)
+        st.session_state.pop("ajos_unclear_company", None)
     else:
         st.session_state.ajos_view = "review"
         st.session_state.ajos_focus_company = None
@@ -925,6 +1061,43 @@ def render_review_actions(
                 is_discovered=is_discovered,
                 candidate_id=candidate_id,
             )
+
+    company_name = str(company["company"])
+    if st.session_state.get("ajos_unclear_company") == company_name:
+        reason = st.text_area(
+            "Kya samajh nahi aaya? (optional — isse copy improve hogi)",
+            key=f"unclear-reason-{company_name}",
+            placeholder="e.g. company kya karti hai clear nahi thi, fit vague laga…",
+        )
+        confirm_col, cancel_col = st.columns(2)
+        with confirm_col:
+            st.markdown('<div id="review-actions-unclear"></div>', unsafe_allow_html=True)
+            if st.button(
+                "Hata do & improve karo",
+                key="review-unclear-confirm",
+                use_container_width=True,
+            ):
+                _handle_review_decision(
+                    company,
+                    learning_state,
+                    "unclear",
+                    is_discovered=is_discovered,
+                    candidate_id=candidate_id,
+                    reason=reason,
+                )
+        with cancel_col:
+            if st.button("Cancel", key="review-unclear-cancel", use_container_width=True):
+                st.session_state.pop("ajos_unclear_company", None)
+                st.rerun()
+    else:
+        st.markdown('<div id="review-actions-unclear"></div>', unsafe_allow_html=True)
+        if st.button(
+            "Didn't understand",
+            key="review-unclear",
+            use_container_width=True,
+        ):
+            st.session_state["ajos_unclear_company"] = company_name
+            st.rerun()
 
 
 def render_review_header(
@@ -1058,6 +1231,8 @@ def render_discovery_panel() -> None:
             )
             st.rerun()
 
+    render_dev_feedback_panel()
+
 
 def render_discovery_footer() -> None:
     config = load_config()
@@ -1066,12 +1241,29 @@ def render_discovery_footer() -> None:
     if last_run:
         themes = ", ".join(last_run.get("themes_searched", []))
         completed_at = last_run.get("completed_at", "")
-        st.caption(
+        discovery_line = (
             f"Discovery {status} · last run: {completed_at} · themes: {themes} · "
             f"added {last_run.get('candidates_added', 0)}"
         )
     else:
-        st.caption(f"Discovery {status} · no runs logged yet")
+        discovery_line = f"Discovery {status} · no runs logged yet"
+
+    content_config = load_content_config()
+    content_status = "on" if content_config["enabled"] else "paused"
+    pending = len(get_pending_refinements())
+    content_run = get_content_last_run()
+    if content_run:
+        content_line = (
+            f"Content agent {content_status} · last run: {content_run.get('completed_at', '')} · "
+            f"refined {content_run.get('companies_refined', 0)} · pending {pending}"
+        )
+    else:
+        content_line = (
+            f"Content agent {content_status} · pending {pending}"
+            if pending
+            else f"Content agent {content_status} · no runs yet"
+        )
+    st.caption(f"{discovery_line} · {content_line}")
 
 
 def render_review_screen(

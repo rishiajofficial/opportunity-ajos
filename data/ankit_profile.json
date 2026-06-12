@@ -32,5 +32,29 @@
     "Product Strategy Lead",
     "AI Transformation Lead"
   ],
+  "content_voice": {
+    "language": "Roman Hinglish",
+    "bullet_separator": ";",
+    "style": "Short bullets, tum/tera tone, specific to Ankit — generic corporate copy nahi",
+    "must_cover": [
+      "Company actually kya karti hai — customers, product, market",
+      "Ankit specifically kyun fit — lived experience, strengths, themes",
+      "Concrete problems jo woh solve kar sakta hai"
+    ],
+    "avoid": [
+      "great fit",
+      "synergy",
+      "leverage",
+      "passionate team",
+      "exciting opportunity",
+      "generic AI buzzwords without context"
+    ],
+    "example_bullets": [
+      "Tum Graphy pe teacher ho — UI friction, creator pain firsthand pata hai",
+      "Multipotentialite yahan survive karta hai — silos kam, ambiguous mandates zyada",
+      "Educator onboarding abhi heavy hai — first course se revenue tak journey smooth karo"
+    ]
+  },
   "note": "This starter profile is an editable hypothesis and should evolve as Ankit clarifies his strongest evidence, preferences, and constraints."
 }
+

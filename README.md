@@ -19,8 +19,9 @@ The dashboard provides:
 - A suggested emerging role
 - Like, Neutral, and Not Interested feedback with optional reasons
 - Opportunity outcome tracking
-- One opportunity intelligence question at a time
+- One opportunity intelligence question at a time (answered questions stay closed)
 - Learning insights and improvement proposals
+- Dev feedback capture with approve-to-queue for the development agent
 
 Suggested roles are strategic hypotheses. They may not exist inside the company
 today and do not imply that the company is hiring.
@@ -124,7 +125,14 @@ The learning layer uses local JSON only:
 - `data/learning/state.json` stores complete answer, feedback, and outcome
   history plus derived alignment memory.
 - `data/learning/proposals.json` stores suggestions for sources, scoring,
-  roadmap changes, and features.
+  roadmap changes, features, and pending `dev_proposals`.
+- `data/learning/dev_feedback.json` stores submitted product/code feedback.
+- `data/learning/dev_agent_queue.json` holds approved items for the dev agent.
+
+Use the **Dev feedback** expander (near Discovery) to submit ideas. Open **AJOS
+learning → Dev proposals** to **Approve** or **Dismiss**. Approved items queue
+for the development agent — see [`DEV_AGENT.md`](DEV_AGENT.md) and
+[`CLOUD_DEV_AUTOMATION.md`](CLOUD_DEV_AUTOMATION.md).
 
 Explicit answers and actions are stored as facts. Repeated evidence can support
 beliefs, while tentative interpretations remain hypotheses. Learning adjusts
@@ -149,6 +157,8 @@ AJOS never automatically edits `MEMORY.md`, `DECISIONS.md`, `ROADMAP.md`, or
 ├── automation
 │   └── ajos-discovery-setup.md
 ├── learning.py
+├── DEV_AGENT.md
+├── CLOUD_DEV_AUTOMATION.md
 ├── scripts
 │   └── notify_discovery.py
 ├── data
@@ -159,6 +169,8 @@ AJOS never automatically edits `MEMORY.md`, `DECISIONS.md`, `ROADMAP.md`, or
 │   │   ├── candidates.json
 │   │   └── runs.json
 │   └── learning
+│       ├── dev_agent_queue.json
+│       ├── dev_feedback.json
 │       ├── proposals.json
 │       ├── questions.json
 │       └── state.json

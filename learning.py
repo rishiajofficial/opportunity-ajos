@@ -9,21 +9,29 @@ LEARNING_DIR = Path(__file__).parent / "data" / "learning"
 QUESTIONS_PATH = LEARNING_DIR / "questions.json"
 STATE_PATH = LEARNING_DIR / "state.json"
 PROPOSALS_PATH = LEARNING_DIR / "proposals.json"
+DEV_FEEDBACK_PATH = LEARNING_DIR / "dev_feedback.json"
+DEV_AGENT_QUEUE_PATH = LEARNING_DIR / "dev_agent_queue.json"
+
+UNCLEAR_RATING = "Didn't Understand"
 
 FEEDBACK_ADJUSTMENTS = {
     "Like": 6,
     "Neutral": 0,
     "Saved": 0,
     "Not Interested": -6,
+    UNCLEAR_RATING: 0,
 }
 
 REVIEW_DECISION_RATINGS = {
     "pass": "Not Interested",
     "saved": "Saved",
     "interested": "Like",
+    "unclear": UNCLEAR_RATING,
 }
 
-QUEUE_EXCLUDED_RATINGS = frozenset({"Not Interested", "Saved", "Like"})
+QUEUE_EXCLUDED_RATINGS = frozenset(
+    {"Not Interested", "Saved", "Like", UNCLEAR_RATING}
+)
 OUTCOME_ADJUSTMENTS = {
     "Not Pursued": -3,
     "Reached Out": 2,
@@ -152,9 +160,10 @@ def record_review_decision(
     state: dict[str, Any],
     company: dict[str, Any],
     decision: str,
+    reason: str = "",
 ) -> dict[str, Any]:
     rating = REVIEW_DECISION_RATINGS[decision]
-    return record_feedback(state, company, rating, "")
+    return record_feedback(state, company, rating, reason)
 
 
 def filter_companies_by_latest_rating(
@@ -423,11 +432,153 @@ def format_value(value: Any) -> str:
     return str(value)
 
 
+def is_answered_value(value: Any) -> bool:
+    if isinstance(value, list):
+        return bool(value)
+    if isinstance(value, str):
+        return bool(value.strip())
+    return value is not None
+
+
+def latest_answer_for(
+    state: dict[str, Any], question_id: str
+) -> dict[str, Any] | None:
+    return latest_by(state["answers"], "question_id").get(question_id)
+
+
+def is_question_answered(state: dict[str, Any], question_id: str) -> bool:
+    answer = latest_answer_for(state, question_id)
+    return answer is not None and is_answered_value(answer.get("answer"))
+
+
 def get_open_questions(
     state: dict[str, Any], questions: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
-    answered_ids = {answer["question_id"] for answer in state["answers"]}
-    return [question for question in questions if question["id"] not in answered_ids]
+    return [
+        question
+        for question in questions
+        if not is_question_answered(state, question["id"])
+    ]
+
+
+def skip_question(
+    state: dict[str, Any], question: dict[str, Any], note: str = "Skipped for now"
+) -> dict[str, Any]:
+    return answer_question(state, question, note)
+
+
+def default_dev_feedback_store() -> dict[str, list]:
+    return {"items": []}
+
+
+def default_dev_agent_queue() -> dict[str, list]:
+    return {"items": []}
+
+
+def load_dev_feedback() -> dict[str, list]:
+    return load_json(DEV_FEEDBACK_PATH, default_dev_feedback_store())
+
+
+def save_dev_feedback(store: dict[str, list]) -> None:
+    save_json(DEV_FEEDBACK_PATH, store)
+
+
+def load_dev_agent_queue() -> dict[str, list]:
+    return load_json(DEV_AGENT_QUEUE_PATH, default_dev_agent_queue())
+
+
+def save_dev_agent_queue(store: dict[str, list]) -> None:
+    save_json(DEV_AGENT_QUEUE_PATH, store)
+
+
+def dev_feedback_id() -> str:
+    return f"dev_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')}"
+
+
+def suggest_dev_action(feedback: str) -> str:
+    trimmed = feedback.strip()
+    if len(trimmed) > 100:
+        trimmed = trimmed[:97] + "..."
+    return f"Implement in opportunity-engine: {trimmed}"
+
+
+def submit_dev_feedback(feedback: str) -> dict[str, Any]:
+    text = feedback.strip()
+    if not text:
+        raise ValueError("Feedback cannot be empty.")
+    store = load_dev_feedback()
+    item = {
+        "id": dev_feedback_id(),
+        "feedback": text,
+        "suggested_action": suggest_dev_action(text),
+        "status": "pending",
+        "submitted_at": now_iso(),
+        "approved_at": None,
+        "dismissed_at": None,
+    }
+    store["items"].append(item)
+    save_dev_feedback(store)
+    state = load_state()
+    save_json(PROPOSALS_PATH, generate_proposals(state, load_questions()))
+    return item
+
+
+def find_dev_feedback_item(store: dict[str, list], item_id: str) -> dict[str, Any] | None:
+    return next((item for item in store["items"] if item["id"] == item_id), None)
+
+
+def dismiss_dev_feedback(item_id: str) -> dict[str, Any] | None:
+    store = load_dev_feedback()
+    item = find_dev_feedback_item(store, item_id)
+    if not item or item["status"] != "pending":
+        return item
+    item["status"] = "dismissed"
+    item["dismissed_at"] = now_iso()
+    save_dev_feedback(store)
+    state = load_state()
+    save_json(PROPOSALS_PATH, generate_proposals(state, load_questions()))
+    return item
+
+
+def approve_dev_feedback(item_id: str) -> dict[str, Any] | None:
+    store = load_dev_feedback()
+    item = find_dev_feedback_item(store, item_id)
+    if not item or item["status"] != "pending":
+        return item
+    item["status"] = "approved"
+    item["approved_at"] = now_iso()
+    save_dev_feedback(store)
+
+    queue = load_dev_agent_queue()
+    queue["items"].append(
+        {
+            "id": item["id"],
+            "feedback": item["feedback"],
+            "suggested_action": item["suggested_action"],
+            "approved_at": item["approved_at"],
+            "status": "queued",
+        }
+    )
+    save_dev_agent_queue(queue)
+
+    state = load_state()
+    save_json(PROPOSALS_PATH, generate_proposals(state, load_questions()))
+    return item
+
+
+def generate_dev_proposals() -> list[dict[str, Any]]:
+    store = load_dev_feedback()
+    return [
+        {
+            "id": item["id"],
+            "feedback": item["feedback"],
+            "suggested_action": item["suggested_action"],
+            "status": item["status"],
+            "submitted_at": item["submitted_at"],
+        }
+        for item in store["items"]
+        if item["status"] == "pending"
+    ]
 
 
 def calculate_personalization(
@@ -627,6 +778,21 @@ def generate_proposals(
             "Collect initial questions and feedback before proposing another feature."
         )
 
+    content_suggestions = []
+    unclear_feedback = [
+        item for item in latest_feedback.values() if item["rating"] == UNCLEAR_RATING
+    ]
+    if unclear_feedback:
+        feature_suggestions.append(
+            f"{len(unclear_feedback)} profile(s) marked as unclear — run the content "
+            "refinement agent to rewrite copy in Ankit's Hinglish voice."
+        )
+    for feedback in unclear_feedback:
+        line = f"Refine {feedback['company']} ({feedback['theme']}) — copy was unclear."
+        if feedback.get("reason"):
+            line += f" AJ said: {feedback['reason']}"
+        content_suggestions.append(line)
+
     return {
         "generated_at": now_iso(),
         "notice": (
@@ -637,4 +803,6 @@ def generate_proposals(
         "scoring_suggestions": scoring_suggestions,
         "roadmap_suggestions": roadmap_suggestions,
         "feature_suggestions": feature_suggestions,
+        "content_suggestions": content_suggestions,
+        "dev_proposals": generate_dev_proposals(),
     }

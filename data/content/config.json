@@ -1,0 +1,6 @@
+{
+  "enabled": true,
+  "max_companies_per_run": 3,
+  "requeue_after_refine": true,
+  "updated_at": "2026-06-12T00:00:00+00:00"
+}
