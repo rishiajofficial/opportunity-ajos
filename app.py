@@ -23,6 +23,7 @@ from company_chat import (
     load_report,
     suggested_questions,
 )
+from llm_chat import is_llm_enabled
 from company_intelligence import (
     get_current_report,
     intelligence_status,
@@ -501,17 +502,42 @@ def render_chat_messages(company_name: str) -> None:
                 st.write(f"- {bullet}")
 
 
+def _answer_chat_question(
+    question: str,
+    company: pd.Series,
+    report: dict | None,
+    *,
+    action: dict | None = None,
+    profile: dict | None = None,
+) -> list[str]:
+    company_name = company["company"]
+    history = chat_history(company_name)[:-1]
+    with st.spinner("Soch raha hoon…"):
+        return answer_company_question(
+            question,
+            company.to_dict(),
+            report,
+            action=action,
+            history=history,
+            profile=profile,
+        )
+
+
 def render_company_chat(
     company: pd.Series,
     *,
     mode: str = "explore",
     action: dict | None = None,
+    profile: dict | None = None,
 ) -> None:
     company_name = company["company"]
     report = load_report(company_name)
     has_intel = report is not None
 
-    st.caption("Jo poochna ho likho — jawab research + fit analysis se aayega.")
+    mode_label = "AI answers" if is_llm_enabled() else "Research snippets"
+    st.caption(
+        f"Jo poochna ho likho — jawab {mode_label.lower()} se aayega. ({mode_label})"
+    )
     render_chat_messages(company_name)
 
     suggest_cols = st.columns(min(3, len(suggested_questions(has_intel))))
@@ -525,11 +551,12 @@ def render_company_chat(
                 use_container_width=True,
             ):
                 append_chat_message(company_name, "user", [prompt])
-                bullets = answer_company_question(
+                bullets = _answer_chat_question(
                     prompt,
-                    company.to_dict(),
+                    company,
                     report,
                     action=action,
+                    profile=profile,
                 )
                 append_chat_message(company_name, "assistant", bullets)
                 st.rerun()
@@ -542,11 +569,12 @@ def render_company_chat(
     question = st.chat_input(placeholder, key=f"chat-input-{mode}-{company_name}")
     if question:
         append_chat_message(company_name, "user", [question])
-        bullets = answer_company_question(
+        bullets = _answer_chat_question(
             question,
-            company.to_dict(),
+            company,
             report,
             action=action,
+            profile=profile,
         )
         append_chat_message(company_name, "assistant", bullets)
         st.rerun()
@@ -1486,6 +1514,7 @@ def render_review_screen(
     *,
     selected_geographies: list[str],
     selected_themes: list[str],
+    profile: dict | None = None,
     queue: list[dict] | None = None,
     saved_count: int | None = None,
     interested_count: int | None = None,
@@ -1540,7 +1569,7 @@ def render_review_screen(
     with chat_col:
         st.markdown('<div class="review-layout"></div>', unsafe_allow_html=True)
         render_occasional_feedback(learning_state, learning_questions, current["company"])
-        render_company_chat(current, mode="explore")
+        render_company_chat(current, mode="explore", profile=profile)
 
 
 def render_company_picker(
@@ -1593,7 +1622,7 @@ def render_focus_view(
         st.link_button("Open website", company["website"], use_container_width=True)
     with chat_col:
         st.caption("Questions? Ask here — draft edit left side pe hai.")
-        render_company_chat(company, mode="action", action=action)
+        render_company_chat(company, mode="action", action=action, profile=profile)
 
 
 def get_app_password() -> str:
@@ -1748,6 +1777,7 @@ else:
         learning_questions,
         selected_geographies=selected_geographies,
         selected_themes=selected_themes,
+        profile=ankit_profile,
         queue=build_review_queue(
             company_dicts,
             learning_state,

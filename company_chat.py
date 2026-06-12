@@ -1,12 +1,16 @@
-"""Grounded company Q&A from CSV + intelligence briefs (no LLM)."""
+"""Grounded company Q&A from CSV + intelligence briefs, with optional LLM."""
 
 from __future__ import annotations
 
+import logging
 import re
 from typing import Any
 
 from company_intelligence import get_current_report, intelligence_status, load_company_intelligence
 from contact_discovery import get_contact_recommendations
+from llm_chat import LLMChatError, answer_with_llm, is_llm_enabled
+
+logger = logging.getLogger(__name__)
 
 
 TOPIC_KEYWORDS: dict[str, tuple[str, ...]] = {
@@ -108,6 +112,36 @@ def _company_pitch(company: dict[str, Any]) -> list[str]:
 
 
 def answer_company_question(
+    question: str,
+    company: dict[str, Any],
+    report: dict[str, Any] | None,
+    *,
+    action: dict[str, Any] | None = None,
+    history: list[dict[str, Any]] | None = None,
+    profile: dict[str, Any] | None = None,
+) -> list[str]:
+    if is_llm_enabled():
+        try:
+            return answer_with_llm(
+                question,
+                company,
+                report,
+                action=action,
+                history=history,
+                profile=profile,
+            )
+        except LLMChatError as exc:
+            logger.warning("Falling back to rule-based chat: %s", exc)
+
+    return _answer_rule_based(
+        question,
+        company,
+        report,
+        action=action,
+    )
+
+
+def _answer_rule_based(
     question: str,
     company: dict[str, Any],
     report: dict[str, Any] | None,

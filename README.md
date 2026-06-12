@@ -56,6 +56,11 @@ Use **[Streamlit Community Cloud](https://share.streamlit.io/)** (free):
 **Local password:** copy `.streamlit/secrets.toml.example` to
 `.streamlit/secrets.toml` and set `AJOS_PASSWORD`.
 
+**AI chat (optional):** add `OPENAI_API_KEY` to the same secrets file (or Streamlit
+Cloud Secrets). Uses `gpt-4o-mini` for grounded company Q&A — typical personal use
+costs roughly **$0.25–2/month**. Without a key, chat falls back to research snippets
+from CSV and intelligence briefs.
+
 **Note:** Cloud deploys start from the committed JSON in the repo. Local changes
 you make after deploy (feedback, actions, drafts) stay on whichever environment
 you used unless you commit and redeploy, or later add shared storage.
@@ -180,7 +185,8 @@ AJOS never automatically edits `MEMORY.md`, `DECISIONS.md`, `ROADMAP.md`, or
 
 ## Future Direction
 
-A later version can use the OpenAI API to enrich company research, generate
-evidence-backed opportunity hypotheses, and explain alignment dynamically.
-Any AI-generated analysis should remain traceable to source material and
-clearly distinguished from verified facts.
+Company chat already uses the OpenAI API when `OPENAI_API_KEY` is set. A later
+version can also use it to enrich company research, generate evidence-backed
+opportunity hypotheses, and refresh intelligence briefs. Any AI-generated analysis
+should remain traceable to source material and clearly distinguished from verified
+facts.
