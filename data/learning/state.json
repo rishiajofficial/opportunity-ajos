@@ -9,6 +9,59 @@
       ],
       "signal": "theme",
       "timestamp": "2026-06-10T11:16:56+00:00"
+    },
+    {
+      "question_id": "company_stage",
+      "question": "Which company stages are most likely to offer the right scope for creating value?",
+      "answer": [
+        "No strong preference"
+      ],
+      "signal": "company_stage",
+      "timestamp": "2026-06-11T15:40:49+00:00"
+    },
+    {
+      "question_id": "collaboration_models",
+      "question": "Which collaboration models should AJOS prioritize?",
+      "answer": [
+        "Advisory",
+        "Founder in Residence",
+        "Entrepreneur in Residence",
+        "Strategic Partnership",
+        "Leadership Role",
+        "Venture Creation"
+      ],
+      "signal": "collaboration_model",
+      "timestamp": "2026-06-11T15:41:01+00:00"
+    },
+    {
+      "question_id": "founder_style",
+      "question": "Which founder qualities create the strongest working resonance?",
+      "answer": [
+        "Mission-driven",
+        "Open to unconventional talent",
+        "Long-term thinker"
+      ],
+      "signal": "founder_style",
+      "timestamp": "2026-06-11T15:41:18+00:00"
+    },
+    {
+      "question_id": "preferred_geographies",
+      "question": "Which geographies should AJOS prioritize for active opportunity creation?",
+      "answer": [
+        "Netherlands",
+        "Finland",
+        "Switzerland",
+        "Remote or global"
+      ],
+      "signal": "geography",
+      "timestamp": "2026-06-11T15:41:35+00:00"
+    },
+    {
+      "question_id": "valuable_problems",
+      "question": "What kinds of problems do you most want to help founders solve?",
+      "answer": "pass for now",
+      "signal": "problem",
+      "timestamp": "2026-06-11T15:41:50+00:00"
     }
   ],
   "feedback": [
@@ -51,6 +104,54 @@
         ],
         "evidence": "preferred_themes",
         "timestamp": "2026-06-10T11:16:56+00:00"
+      },
+      {
+        "type": "company_stage",
+        "value": [
+          "No strong preference"
+        ],
+        "evidence": "company_stage",
+        "timestamp": "2026-06-11T15:40:49+00:00"
+      },
+      {
+        "type": "collaboration_model",
+        "value": [
+          "Advisory",
+          "Founder in Residence",
+          "Entrepreneur in Residence",
+          "Strategic Partnership",
+          "Leadership Role",
+          "Venture Creation"
+        ],
+        "evidence": "collaboration_models",
+        "timestamp": "2026-06-11T15:41:01+00:00"
+      },
+      {
+        "type": "founder_style",
+        "value": [
+          "Mission-driven",
+          "Open to unconventional talent",
+          "Long-term thinker"
+        ],
+        "evidence": "founder_style",
+        "timestamp": "2026-06-11T15:41:18+00:00"
+      },
+      {
+        "type": "geography",
+        "value": [
+          "Netherlands",
+          "Finland",
+          "Switzerland",
+          "Remote or global"
+        ],
+        "evidence": "preferred_geographies",
+        "timestamp": "2026-06-11T15:41:35+00:00"
+      },
+      {
+        "type": "problem",
+        "value": "pass for now",
+        "evidence": "valuable_problems",
+        "timestamp": "2026-06-11T15:41:50+00:00"
       }
     ],
     "answers": [
@@ -63,6 +164,59 @@
         ],
         "signal": "theme",
         "timestamp": "2026-06-10T11:16:56+00:00"
+      },
+      {
+        "question_id": "company_stage",
+        "question": "Which company stages are most likely to offer the right scope for creating value?",
+        "answer": [
+          "No strong preference"
+        ],
+        "signal": "company_stage",
+        "timestamp": "2026-06-11T15:40:49+00:00"
+      },
+      {
+        "question_id": "collaboration_models",
+        "question": "Which collaboration models should AJOS prioritize?",
+        "answer": [
+          "Advisory",
+          "Founder in Residence",
+          "Entrepreneur in Residence",
+          "Strategic Partnership",
+          "Leadership Role",
+          "Venture Creation"
+        ],
+        "signal": "collaboration_model",
+        "timestamp": "2026-06-11T15:41:01+00:00"
+      },
+      {
+        "question_id": "founder_style",
+        "question": "Which founder qualities create the strongest working resonance?",
+        "answer": [
+          "Mission-driven",
+          "Open to unconventional talent",
+          "Long-term thinker"
+        ],
+        "signal": "founder_style",
+        "timestamp": "2026-06-11T15:41:18+00:00"
+      },
+      {
+        "question_id": "preferred_geographies",
+        "question": "Which geographies should AJOS prioritize for active opportunity creation?",
+        "answer": [
+          "Netherlands",
+          "Finland",
+          "Switzerland",
+          "Remote or global"
+        ],
+        "signal": "geography",
+        "timestamp": "2026-06-11T15:41:35+00:00"
+      },
+      {
+        "question_id": "valuable_problems",
+        "question": "What kinds of problems do you most want to help founders solve?",
+        "answer": "pass for now",
+        "signal": "problem",
+        "timestamp": "2026-06-11T15:41:50+00:00"
       }
     ],
     "actions": [],
@@ -86,12 +240,48 @@
         "evidence": "Like"
       }
     ],
-    "founder_signals": [],
+    "founder_signals": [
+      {
+        "type": "founder_style",
+        "value": [
+          "Mission-driven",
+          "Open to unconventional talent",
+          "Long-term thinker"
+        ],
+        "evidence": "founder_style",
+        "timestamp": "2026-06-11T15:41:18+00:00"
+      }
+    ],
     "facts": [
       {
         "statement": "AJ answered 'Which themes should AJOS prioritize when discovering opportunities?' with: Human Potential, Wellness & Mental Wellbeing.",
         "source": "answer",
         "timestamp": "2026-06-10T11:16:56+00:00"
+      },
+      {
+        "statement": "AJ answered 'Which company stages are most likely to offer the right scope for creating value?' with: No strong preference.",
+        "source": "answer",
+        "timestamp": "2026-06-11T15:40:49+00:00"
+      },
+      {
+        "statement": "AJ answered 'Which collaboration models should AJOS prioritize?' with: Advisory, Founder in Residence, Entrepreneur in Residence, Strategic Partnership, Leadership Role, Venture Creation.",
+        "source": "answer",
+        "timestamp": "2026-06-11T15:41:01+00:00"
+      },
+      {
+        "statement": "AJ answered 'Which founder qualities create the strongest working resonance?' with: Mission-driven, Open to unconventional talent, Long-term thinker.",
+        "source": "answer",
+        "timestamp": "2026-06-11T15:41:18+00:00"
+      },
+      {
+        "statement": "AJ answered 'Which geographies should AJOS prioritize for active opportunity creation?' with: Netherlands, Finland, Switzerland, Remote or global.",
+        "source": "answer",
+        "timestamp": "2026-06-11T15:41:35+00:00"
+      },
+      {
+        "statement": "AJ answered 'What kinds of problems do you most want to help founders solve?' with: pass for now.",
+        "source": "answer",
+        "timestamp": "2026-06-11T15:41:50+00:00"
       },
       {
         "statement": "AJ rated Futurice as Like. Reason: Looks relevant. Need to understand more, there should be more about the company, what they are doing currently, wqhat kind of clients they have, and what are they looking for - in the roles generally? Which are the in demand roles at that company.",
@@ -118,6 +308,18 @@
     "hypotheses": [
       {
         "statement": "Alignment with Creator Economy may depend on the specific company, role, or founder.",
+        "evidence_count": 1
+      },
+      {
+        "statement": "No strong preference may be an important company stage signal.",
+        "evidence_count": 1
+      },
+      {
+        "statement": "Advisory, Founder in Residence, Entrepreneur in Residence, Strategic Partnership, Leadership Role, Venture Creation may be an important collaboration model signal.",
+        "evidence_count": 1
+      },
+      {
+        "statement": "pass for now may be an important problem signal.",
         "evidence_count": 1
       }
     ]
