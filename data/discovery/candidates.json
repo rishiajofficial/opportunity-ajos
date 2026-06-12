@@ -1,1 +1,115 @@
-{"candidates": []}
+{
+  "candidates": [
+    {
+      "candidate_id": "openup",
+      "name": "OpenUp",
+      "country": "Netherlands",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://openup.com",
+      "one_liner": "Amsterdam-based employee mental well-being platform \u2014 preventive psychology, coaching, and people analytics for 2000+ organisations.",
+      "why_ankit_fits": [
+        "Workplace wellbeing + product systems \u2014 connects prevention, manager enablement, and HR analytics",
+        "Liked Futurice/Graphy pattern: founder-led scale, multipotentialite scope across product, AI, and organisational change"
+      ],
+      "problems_to_solve": [
+        "Design AI-assisted wellbeing journeys without losing human trust",
+        "Turn usage data into actionable people insights for HR leaders",
+        "Expand beyond EAP replacement into human-potential and performance narratives"
+      ],
+      "suggested_role": "Wellbeing Innovation Entrepreneur in Residence",
+      "base_scores": {
+        "theme": 94,
+        "capability": 91,
+        "role": 93,
+        "geography": 91
+      },
+      "source_urls": [
+        {
+          "url": "https://openup.com",
+          "label": "OpenUp homepage"
+        },
+        {
+          "url": "https://bebeez.eu/2026/03/26/amsterdams-openup-secures-e20-million-to-expand-its-employee-mental-health-platform-across-europe/",
+          "label": "Funding and scale coverage"
+        }
+      ],
+      "discovered_at": "2026-06-11T15:45:20+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    },
+    {
+      "candidate_id": "auntie",
+      "name": "Auntie",
+      "country": "Finland",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://www.auntie.io",
+      "one_liner": "Finnish workplace mental wellbeing platform \u2014 proactive 1:1 sessions, leader support, and HR insights in 25+ languages.",
+      "why_ankit_fits": [
+        "Direct Futurice customer reference \u2014 strong signal for Finland future-of-work + wellbeing overlap",
+        "Product + teaching lens fits discussion packages, leader development, and evidence-based workplace programmes"
+      ],
+      "problems_to_solve": [
+        "Scale personalised wellbeing support across global distributed teams",
+        "Connect Auntie Insights data to broader human-potential and performance outcomes",
+        "Explore responsible AI for triage, coaching support, and preventative burnout pathways"
+      ],
+      "suggested_role": "Strategic Advisor, Workplace Wellbeing & Human Potential",
+      "base_scores": {
+        "theme": 93,
+        "capability": 90,
+        "role": 92,
+        "geography": 90
+      },
+      "source_urls": [
+        {
+          "url": "https://www.auntie.io",
+          "label": "Auntie homepage"
+        },
+        {
+          "url": "https://www.auntie.io/customer-stories",
+          "label": "Customer stories including Futurice"
+        }
+      ],
+      "discovered_at": "2026-06-11T15:45:20+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    },
+    {
+      "candidate_id": "kyan-health",
+      "name": "Kyan Health",
+      "country": "Switzerland",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://www.kyanhealth.com",
+      "one_liner": "Swiss workforce mental health platform \u2014 stepped care, AI companion Kai, and measurable EAP alternative for global employers.",
+      "why_ankit_fits": [
+        "Systems thinking across prevention, therapy, coaching, and organisational programmes",
+        "AI transformation with clinical guardrails \u2014 matches Ankit's responsible-AI + product strategy strengths"
+      ],
+      "problems_to_solve": [
+        "Design continuous care pathways beyond episodic EAP usage",
+        "Help HR leaders translate wellbeing data into productivity and retention outcomes",
+        "Shape AI companion experiences that stay safe, personal, and clinically grounded"
+      ],
+      "suggested_role": "Wellbeing & AI Product Strategy Advisor",
+      "base_scores": {
+        "theme": 94,
+        "capability": 92,
+        "role": 91,
+        "geography": 89
+      },
+      "source_urls": [
+        {
+          "url": "https://www.kyanhealth.com",
+          "label": "Kyan Health homepage"
+        },
+        {
+          "url": "https://www.linkedin.com/posts/swiss-startup-association_nextinbusiness-swissstartups-ssa-activity-7389184432395661312-BYg-",
+          "label": "Swiss Startup Association feature"
+        }
+      ],
+      "discovered_at": "2026-06-11T15:45:20+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    }
+  ]
+}
