@@ -1,0 +1,10 @@
+{
+  "enabled": true,
+  "provider": "apollo",
+  "max_companies_per_run": 3,
+  "max_contacts_per_company": 2,
+  "require_verified_email": false,
+  "allow_generic_emails": false,
+  "max_credits_per_run": 10,
+  "updated_at": "2026-06-12T12:00:00+00:00"
+}

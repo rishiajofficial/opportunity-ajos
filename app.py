@@ -749,26 +749,42 @@ def render_contact_recommendations(company_name: str) -> dict:
         st.info("No contacts added for this company yet.")
         return recommendations
 
+    email_line = ""
+    if primary.get("email"):
+        status = primary.get("email_status", "")
+        status_label = f" · {status}" if status else ""
+        email_line = f" · {primary['email']}{status_label}"
     render_info_card(
         "Try first",
         primary["name"],
-        f"{primary['title']} · priority {primary['priority_score']}/100",
+        f"{primary['title']} · priority {primary['priority_score']}/100{email_line}",
     )
     render_bullet_list([shorten_bullet(primary["why_they_matter"])], max_items=1)
+    if not primary.get("email"):
+        st.caption("Email finder agent will look this up for interested companies.")
 
     with st.expander("Contact details", expanded=False):
         st.write(primary["why_they_matter"])
         st.markdown(f"[Source]({primary['source_url']})")
+        if primary.get("email"):
+            st.markdown(f"**Email:** {primary['email']}")
+            if primary.get("email_status"):
+                st.caption(f"Status: {primary['email_status']}")
+            if primary.get("email_source_url"):
+                st.markdown(f"[Email source]({primary['email_source_url']})")
         secondary = recommendations["secondary"]
         if secondary:
             st.markdown(f"**Plan B:** {secondary['name']} · {secondary['title']}")
             st.write(secondary["why_they_matter"])
+            if secondary.get("email"):
+                st.markdown(f"**Email:** {secondary['email']}")
         if recommendations["why_primary"]:
             st.caption(recommendations["why_primary"])
         for contact in recommendations["all_contacts"]:
+            contact_email = f" · {contact['email']}" if contact.get("email") else ""
             st.markdown(
                 f"**{contact['name']}** · {contact['title']} · "
-                f"{contact['priority_score']}/100"
+                f"{contact['priority_score']}/100{contact_email}"
             )
     return recommendations
 

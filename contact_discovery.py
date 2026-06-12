@@ -1,8 +1,13 @@
 import json
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from company_intelligence import company_to_slug
+from company_intelligence import company_to_slug, save_json
+
+
+def now_iso() -> str:
+    return datetime.now(timezone.utc).isoformat(timespec="seconds")
 
 
 CONTACTS_DIR = Path(__file__).parent / "data" / "contacts" / "companies"
@@ -63,6 +68,16 @@ def validate_contact(contact: dict[str, Any]) -> None:
     unknown_tags = set(role_tags) - VALID_ROLE_TAGS
     if unknown_tags:
         raise ValueError(f"Contact {contact.get('contact_id')} has unknown role_tags: {unknown_tags}")
+    if contact.get("email") is not None and not isinstance(contact["email"], str):
+        raise ValueError(f"Contact {contact.get('contact_id')} email must be a string.")
+    if contact.get("email_status") is not None and not isinstance(contact["email_status"], str):
+        raise ValueError(f"Contact {contact.get('contact_id')} email_status must be a string.")
+    if contact.get("email_source") is not None and not isinstance(contact["email_source"], str):
+        raise ValueError(f"Contact {contact.get('contact_id')} email_source must be a string.")
+    if contact.get("email_source_url") is not None and not isinstance(contact["email_source_url"], str):
+        raise ValueError(f"Contact {contact.get('contact_id')} email_source_url must be a string.")
+    if contact.get("email_found_at") is not None and not isinstance(contact["email_found_at"], str):
+        raise ValueError(f"Contact {contact.get('contact_id')} email_found_at must be a string.")
 
 
 def validate_entity(entity: dict[str, Any]) -> None:
@@ -90,6 +105,12 @@ def load_company_contacts(entity_id: str) -> dict[str, Any] | None:
             f"Contact entity_id '{entity['entity_id']}' does not match '{entity_id}'."
         )
     return entity
+
+
+def save_company_contacts(entity: dict[str, Any]) -> None:
+    validate_entity(entity)
+    entity["updated_at"] = now_iso()
+    save_json(contacts_path(entity["entity_id"]), entity)
 
 
 def contacts_status(entity_id: str) -> dict[str, Any]:
@@ -222,4 +243,10 @@ def contact_summary(contact: dict[str, Any] | None) -> dict[str, Any] | None:
     }
     if contact.get("email"):
         summary["email"] = contact["email"].strip()
+    if contact.get("email_status"):
+        summary["email_status"] = contact["email_status"].strip()
+    if contact.get("email_source"):
+        summary["email_source"] = contact["email_source"].strip()
+    if contact.get("email_source_url"):
+        summary["email_source_url"] = contact["email_source_url"].strip()
     return summary
