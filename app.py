@@ -100,6 +100,99 @@ APP_CSS = """
         max-width: 480px;
         padding: 0.35rem 0.85rem 5rem;
     }
+    .dashboard-header {
+        display: none;
+    }
+    .sidebar-brand {
+        color: #173f34;
+        font-size: 1.35rem;
+        font-weight: 800;
+        letter-spacing: 0.04em;
+        margin: 0 0 0.15rem;
+    }
+    .sidebar-tagline {
+        color: #6b7a73;
+        font-size: 0.78rem;
+        margin: 0 0 1rem;
+    }
+    .queue-preview-item {
+        color: #425049;
+        font-size: 0.82rem;
+        line-height: 1.5;
+        margin: 0.1rem 0;
+    }
+    .queue-preview-active {
+        color: #173f34;
+        font-weight: 700;
+    }
+    @media (max-width: 768px) {
+        div[data-testid="stHorizontalBlock"] {
+            flex-direction: column !important;
+            gap: 0.5rem !important;
+        }
+        div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+            width: 100% !important;
+            min-width: 100% !important;
+            flex: 1 1 100% !important;
+        }
+    }
+    @media (min-width: 1024px) {
+        .block-container {
+            max-width: 1280px;
+            padding: 1rem 2rem 3rem;
+        }
+        section[data-testid="stSidebar"] {
+            min-width: 300px !important;
+            max-width: 320px !important;
+            background: #f8faf9;
+            border-right: 1px solid #dde5df;
+        }
+        section[data-testid="stSidebar"] .block-container {
+            max-width: 100%;
+            padding: 1rem 0.85rem 2rem;
+        }
+        .dashboard-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: #fff;
+            border: 1px solid #e4ebe6;
+            border-radius: 16px;
+            margin-bottom: 1rem;
+            padding: 0.85rem 1.15rem;
+        }
+        .dashboard-header h1 {
+            color: #173f34;
+            font-size: 1.1rem;
+            font-weight: 800;
+            margin: 0;
+        }
+        .dashboard-header p {
+            color: #6b7a73;
+            font-size: 0.82rem;
+            margin: 0;
+        }
+        .dashboard-metrics {
+            display: flex;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+        }
+        .dashboard-metric {
+            background: #f4f7f5;
+            border: 1px solid #e4ebe6;
+            border-radius: 12px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            padding: 0.35rem 0.65rem;
+            white-space: nowrap;
+        }
+        .dashboard-metric strong {
+            color: #173f34;
+        }
+        .review-layout [data-testid="column"]:first-child .company-card {
+            margin-top: 0;
+        }
+    }
     [data-testid="stTabs"] {
         background: #fff;
         border: 1px solid #dde5df;
@@ -892,28 +985,32 @@ def render_dev_proposals(proposals: dict) -> None:
 
 def render_dev_feedback_panel() -> None:
     with st.expander("Dev feedback", expanded=False):
-        st.caption(
-            "Product or code feedback. Approved items queue for the development agent."
-        )
-        feedback_text = st.text_area(
-            "What should we build or fix?",
-            height=100,
-            key="dev-feedback-input",
-            label_visibility="collapsed",
-            placeholder="e.g. Learning questions keep repeating after I answer them",
-        )
-        if st.button("Submit feedback", key="dev-feedback-submit", type="primary"):
-            try:
-                submit_dev_feedback(feedback_text)
-                st.success("Feedback saved. Check Proposals in AJOS learning.")
-                st.rerun()
-            except ValueError as error:
-                st.warning(str(error))
+        _render_dev_feedback_form()
 
-        queue = load_dev_agent_queue()
-        queued = [item for item in queue.get("items", []) if item.get("status") == "queued"]
-        if queued:
-            st.caption(f"{len(queued)} item(s) queued for dev agent.")
+
+def _render_dev_feedback_form() -> None:
+    st.caption(
+        "Product or code feedback. Approved items queue for the development agent."
+    )
+    feedback_text = st.text_area(
+        "What should we build or fix?",
+        height=100,
+        key="dev-feedback-input",
+        label_visibility="collapsed",
+        placeholder="e.g. Learning questions keep repeating after I answer them",
+    )
+    if st.button("Submit feedback", key="dev-feedback-submit", type="primary"):
+        try:
+            submit_dev_feedback(feedback_text)
+            st.success("Feedback saved. Check Proposals in AJOS learning.")
+            st.rerun()
+        except ValueError as error:
+            st.warning(str(error))
+
+    queue = load_dev_agent_queue()
+    queued = [item for item in queue.get("items", []) if item.get("status") == "queued"]
+    if queued:
+        st.caption(f"{len(queued)} item(s) queued for dev agent.")
 
 
 def render_learn_tab(learning_state: dict, questions: list[dict]) -> None:
@@ -1100,6 +1197,13 @@ def render_review_actions(
             st.rerun()
 
 
+def switch_view(view: str) -> None:
+    st.session_state.ajos_view = view
+    if view == "review":
+        st.session_state.ajos_focus_company = None
+    st.rerun()
+
+
 def render_review_header(
     queue_size: int,
     saved_count: int,
@@ -1112,8 +1216,7 @@ def render_review_header(
             type="primary",
             use_container_width=True,
         ):
-            st.session_state.ajos_view = "interested"
-            st.rerun()
+            switch_view("interested")
 
     header_left, header_saved = st.columns([2, 1])
     with header_left:
@@ -1123,15 +1226,124 @@ def render_review_header(
             st.caption("Queue empty")
     with header_saved:
         if saved_count and st.button(f"Saved ({saved_count})", key="open-saved"):
-            st.session_state.ajos_view = "saved"
-            st.rerun()
+            switch_view("saved")
+
+
+def render_dashboard_header(
+    queue_size: int,
+    saved_count: int,
+    interested_count: int,
+    *,
+    current_company: str = "",
+) -> None:
+    current_line = (
+        f"Reviewing <strong>{html.escape(current_company)}</strong>"
+        if current_company
+        else "Queue empty"
+    )
+    render_html(
+        f'<div class="dashboard-header">'
+        f"<div><h1>AJOS</h1><p>Opportunity review</p></div>"
+        f'<div class="dashboard-metrics">'
+        f'<span class="dashboard-metric">Queue <strong>{queue_size}</strong></span>'
+        f'<span class="dashboard-metric">Saved <strong>{saved_count}</strong></span>'
+        f'<span class="dashboard-metric">Interested <strong>{interested_count}</strong></span>'
+        f'<span class="dashboard-metric">{current_line}</span>'
+        f"</div></div>"
+    )
+
+
+def render_sidebar_dashboard(
+    *,
+    queue: list[dict],
+    saved_count: int,
+    interested_count: int,
+    learning_state: dict,
+    learning_questions: list[dict],
+    selected_geographies: list[str],
+    selected_themes: list[str],
+) -> tuple[list[str], list[str]]:
+    with st.sidebar:
+        st.markdown('<p class="sidebar-brand">AJOS</p>', unsafe_allow_html=True)
+        st.markdown(
+            '<p class="sidebar-tagline">Opportunity Engine</p>',
+            unsafe_allow_html=True,
+        )
+
+        view = st.session_state.ajos_view
+        if view == "focus":
+            st.caption("Next steps open")
+            if st.button("← Back to queue", key="sidebar-focus-back", use_container_width=True):
+                switch_view("review")
+        else:
+            nav = st.radio(
+                "View",
+                options=["review", "interested", "saved"],
+                format_func=lambda key: {
+                    "review": f"Review queue ({len(queue)})",
+                    "interested": f"Interested ({interested_count})",
+                    "saved": f"Saved ({saved_count})",
+                }[key],
+                index=["review", "interested", "saved"].index(view)
+                if view in {"review", "interested", "saved"}
+                else 0,
+                key="sidebar-nav",
+                label_visibility="collapsed",
+            )
+            if nav != view:
+                switch_view(nav)
+
+        st.markdown("---")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Queue", len(queue))
+        m2.metric("Saved", saved_count)
+        m3.metric("Interested", interested_count)
+
+        if queue:
+            st.caption("Up next")
+            for index, item in enumerate(queue[:6]):
+                name = html.escape(str(item["company"]))
+                score = int(item.get("final_score", 0))
+                active = " queue-preview-active" if index == 0 else ""
+                badge = " · Discovered" if item.get("is_discovered") else ""
+                st.markdown(
+                    f'<p class="queue-preview-item{active}">'
+                    f"{name} · {score}/100{badge}</p>",
+                    unsafe_allow_html=True,
+                )
+
+        st.markdown("---")
+        selected_geographies = st.multiselect(
+            "Country",
+            TARGET_GEOGRAPHIES,
+            default=selected_geographies,
+            key="sidebar-countries",
+        )
+        selected_themes = st.multiselect(
+            "Theme",
+            PRIORITY_THEMES,
+            default=selected_themes,
+            key="sidebar-themes",
+        )
+
+        render_discovery_panel(in_sidebar=True)
+
+        with st.expander("Dev feedback", expanded=False):
+            _render_dev_feedback_form()
+
+        with st.expander("AJOS learning", expanded=False):
+            render_learn_tab(learning_state, learning_questions)
+
+        render_discovery_footer()
+
+    return selected_geographies, selected_themes
 
 
 def _lines_to_list(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
-def render_discovery_panel() -> None:
+def render_discovery_panel(*, in_sidebar: bool = False) -> None:
     config = load_config()
     country_options = sorted(
         set(TARGET_GEOGRAPHIES) | set(config.get("active_countries", []))
@@ -1231,7 +1443,8 @@ def render_discovery_panel() -> None:
             )
             st.rerun()
 
-    render_dev_feedback_panel()
+    if not in_sidebar:
+        render_dev_feedback_panel()
 
 
 def render_discovery_footer() -> None:
@@ -1273,28 +1486,38 @@ def render_review_screen(
     *,
     selected_geographies: list[str],
     selected_themes: list[str],
+    queue: list[dict] | None = None,
+    saved_count: int | None = None,
+    interested_count: int | None = None,
 ) -> None:
     company_dicts = companies_as_dicts(filtered)
-    queue = build_review_queue(
-        company_dicts,
-        learning_state,
-        geographies=selected_geographies,
-        themes=selected_themes,
-    )
-    saved = get_saved_companies(company_dicts, learning_state)
-    interested = get_interested_companies(company_dicts, learning_state)
+    if queue is None:
+        queue = build_review_queue(
+            company_dicts,
+            learning_state,
+            geographies=selected_geographies,
+            themes=selected_themes,
+        )
+    if saved_count is None:
+        saved_count = len(get_saved_companies(company_dicts, learning_state))
+    if interested_count is None:
+        interested_count = len(get_interested_companies(company_dicts, learning_state))
 
-    render_review_header(len(queue), len(saved), len(interested))
+    render_dashboard_header(
+        len(queue),
+        saved_count,
+        interested_count,
+        current_company=queue[0]["company"] if queue else "",
+    )
+    render_review_header(len(queue), saved_count, interested_count)
 
     if not queue:
         st.info("You're through the list.")
-        if saved:
+        if saved_count:
             st.caption("Open Saved to revisit bookmarked opportunities.")
-        if interested:
+        if interested_count:
             st.caption("Open Interested to continue with liked opportunities.")
-        render_discovery_footer()
-        with st.expander("AJOS learning", expanded=False):
-            render_learn_tab(learning_state, learning_questions)
+        st.caption("Open the menu (☰) for filters, discovery, and learning.")
         return
 
     current_item = queue[0]
@@ -1303,20 +1526,21 @@ def render_review_screen(
         current = review_item_to_series(current_item)
     else:
         current = find_company_row(filtered, current_item["company"])
-    render_company_card(current, is_discovered=is_discovered)
-    render_review_bullets(current)
-    render_occasional_feedback(learning_state, learning_questions, current["company"])
-    render_company_chat(current, mode="explore")
-    render_review_actions(
-        current,
-        learning_state,
-        is_discovered=is_discovered,
-        candidate_id=current_item.get("candidate_id"),
-    )
-    render_discovery_footer()
 
-    with st.expander("AJOS learning", expanded=False):
-        render_learn_tab(learning_state, learning_questions)
+    main_col, chat_col = st.columns([11, 9], gap="large")
+    with main_col:
+        render_company_card(current, is_discovered=is_discovered)
+        render_review_bullets(current)
+        render_review_actions(
+            current,
+            learning_state,
+            is_discovered=is_discovered,
+            candidate_id=current_item.get("candidate_id"),
+        )
+    with chat_col:
+        st.markdown('<div class="review-layout"></div>', unsafe_allow_html=True)
+        render_occasional_feedback(learning_state, learning_questions, current["company"])
+        render_company_chat(current, mode="explore")
 
 
 def render_company_picker(
@@ -1350,26 +1574,26 @@ def render_focus_view(
     learning_state: dict,
 ) -> None:
     if st.button("← Back to queue", key="focus-back", use_container_width=True):
-        st.session_state.ajos_view = "review"
-        st.session_state.ajos_focus_company = None
-        st.rerun()
+        switch_view("review")
 
-    render_company_card(company, label="Next steps")
     action = ensure_recommendation(company.to_dict(), profile, learning_state)
-    render_action_surface(action)
-    render_action_details(
-        company,
-        profile,
-        learning_state,
-        action,
-        inline_draft=True,
-    )
-    st.markdown("---")
-    st.caption("Questions? Ask here — draft edit upar hai.")
-    render_company_chat(company, mode="action", action=action)
-    with st.expander("Track progress", expanded=False):
-        render_track_tab(company, profile, learning_state)
-    st.link_button("Open website", company["website"], use_container_width=True)
+    main_col, chat_col = st.columns([11, 9], gap="large")
+    with main_col:
+        render_company_card(company, label="Next steps")
+        render_action_surface(action)
+        render_action_details(
+            company,
+            profile,
+            learning_state,
+            action,
+            inline_draft=True,
+        )
+        with st.expander("Track progress", expanded=False):
+            render_track_tab(company, profile, learning_state)
+        st.link_button("Open website", company["website"], use_container_width=True)
+    with chat_col:
+        st.caption("Questions? Ask here — draft edit left side pe hai.")
+        render_company_chat(company, mode="action", action=action)
 
 
 def get_app_password() -> str:
@@ -1422,8 +1646,8 @@ def render_login_gate() -> None:
 st.set_page_config(
     page_title="AJOS",
     page_icon="✦",
-    layout="centered",
-    initial_sidebar_state="collapsed",
+    layout="wide",
+    initial_sidebar_state="auto",
 )
 
 st.markdown(APP_CSS, unsafe_allow_html=True)
@@ -1452,15 +1676,35 @@ companies_df = companies_df.sort_values(
 
 init_session_view()
 
-render_discovery_panel()
+if "sidebar_geographies" not in st.session_state:
+    st.session_state.sidebar_geographies = list(TARGET_GEOGRAPHIES)
+if "sidebar_themes" not in st.session_state:
+    st.session_state.sidebar_themes = list(PRIORITY_THEMES)
 
-with st.expander("Filters", expanded=False):
-    selected_geographies = st.multiselect(
-        "Country", TARGET_GEOGRAPHIES, default=TARGET_GEOGRAPHIES
-    )
-    selected_themes = st.multiselect(
-        "Theme", PRIORITY_THEMES, default=PRIORITY_THEMES
-    )
+company_dicts_all = companies_as_dicts(companies_df)
+learning_state_for_sidebar = learning_state
+queue_for_sidebar = build_review_queue(
+    company_dicts_all,
+    learning_state_for_sidebar,
+    geographies=st.session_state.sidebar_geographies,
+    themes=st.session_state.sidebar_themes,
+)
+saved_for_sidebar = get_saved_companies(company_dicts_all, learning_state_for_sidebar)
+interested_for_sidebar = get_interested_companies(
+    company_dicts_all, learning_state_for_sidebar
+)
+
+selected_geographies, selected_themes = render_sidebar_dashboard(
+    queue=queue_for_sidebar,
+    saved_count=len(saved_for_sidebar),
+    interested_count=len(interested_for_sidebar),
+    learning_state=learning_state,
+    learning_questions=learning_questions,
+    selected_geographies=st.session_state.sidebar_geographies,
+    selected_themes=st.session_state.sidebar_themes,
+)
+st.session_state.sidebar_geographies = selected_geographies
+st.session_state.sidebar_themes = selected_themes
 
 filtered = companies_df[
     companies_df["country"].isin(selected_geographies)
@@ -1504,4 +1748,12 @@ else:
         learning_questions,
         selected_geographies=selected_geographies,
         selected_themes=selected_themes,
+        queue=build_review_queue(
+            company_dicts,
+            learning_state,
+            geographies=selected_geographies,
+            themes=selected_themes,
+        ),
+        saved_count=len(get_saved_companies(company_dicts, learning_state)),
+        interested_count=len(get_interested_companies(company_dicts, learning_state)),
     )
