@@ -77,7 +77,7 @@ def _bullets_from_section(section: dict[str, Any] | None, max_items: int = 3) ->
     if not content:
         return []
     parts = [part.strip() for part in content.replace(";", ".").split(".") if part.strip()]
-    return parts[:max_items] if parts else [content[:220]]
+    return parts[:max_items] if parts else [content[:100]]
 
 
 def load_report(company_name: str) -> dict[str, Any] | None:
@@ -103,7 +103,7 @@ def _csv_bullets(field: str, max_items: int = 3) -> list[str]:
         return []
     if ";" in text:
         return [part.strip() for part in text.split(";") if part.strip()][:max_items]
-    return [text[:220]]
+    return [text[:100]]
 
 
 def _company_pitch(company: dict[str, Any]) -> list[str]:
@@ -236,4 +236,4 @@ def _answer_rule_based(
         if key and key not in seen:
             seen.add(key)
             unique.append(line.strip())
-    return unique[:4]
+    return unique[:2]

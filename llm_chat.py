@@ -14,8 +14,9 @@ from openai import OpenAI
 PROFILE_PATH = Path(__file__).parent / "data" / "ankit_profile.json"
 OPENAI_MODEL = "gpt-4o-mini"
 ANTHROPIC_MODEL = "claude-haiku-4-5"
-MAX_HISTORY_TURNS = 4
-MAX_BULLETS = 4
+MAX_HISTORY_TURNS = 3
+MAX_BULLETS = 2
+MAX_BULLET_CHARS = 100
 
 logger = logging.getLogger(__name__)
 
@@ -161,27 +162,67 @@ def build_chat_context(
     return json.dumps(payload, ensure_ascii=False, indent=2)
 
 
-def _build_system_prompt(profile: dict[str, Any]) -> str:
+def _is_casual_turn(question: str) -> bool:
+    normalized = re.sub(r"[^\w\s]", "", question.lower()).strip()
+    if not normalized or len(normalized.split()) > 3:
+        return False
+    casual = {
+        "hey",
+        "hi",
+        "hello",
+        "hii",
+        "yo",
+        "sup",
+        "namaste",
+        "hola",
+        "ok",
+        "okay",
+        "thanks",
+        "thank you",
+        "thx",
+    }
+    return normalized in casual
+
+
+def _truncate_bullet(text: str, max_chars: int = MAX_BULLET_CHARS) -> str:
+    cleaned = re.sub(r"\s+", " ", text.strip())
+    if len(cleaned) <= max_chars:
+        return cleaned
+    clipped = cleaned[: max_chars - 1].rsplit(" ", 1)[0]
+    return (clipped or cleaned[: max_chars - 1]).rstrip(".,;") + "…"
+
+
+def _bullet_cap(question: str) -> int:
+    return 1 if _is_casual_turn(question) else MAX_BULLETS
+
+
+def _build_system_prompt(profile: dict[str, Any], *, question: str) -> str:
     voice = profile.get("content_voice", {})
     avoid = ", ".join(voice.get("avoid", []))
-    examples = "\n".join(f"- {item}" for item in voice.get("example_bullets", [])[:3])
+    examples = "\n".join(f"- {item}" for item in voice.get("example_bullets", [])[:2])
+    bullet_cap = _bullet_cap(question)
+    casual_rule = (
+        "User ne casual hi/hello bola — sirf 1 line, max 8 words, phir ek short sawaal poocho."
+        if bullet_cap == 1
+        else f"Max {bullet_cap} bullets. Har bullet max 12 words — essay mat likho."
+    )
     return f"""You are the AJOS Opportunity Engine assistant for Ankit.
 
-Mission: opportunity creation — not job matching. Help Ankit understand founders, companies, and how he could create disproportionate value through conversation, collaboration, advisory work, or leadership.
+Mission: opportunity creation — not job matching. Help Ankit see fit and entry points fast.
 
-Voice: Roman Hinglish, tum/tera tone. Short bullets — generic corporate copy nahi.
-Return exactly 3-4 bullet points as a JSON array of strings, e.g. ["bullet 1", "bullet 2"].
+Voice: Roman Hinglish, tum/tera tone. WhatsApp-speed — chhota, seedha, no corporate fluff.
+{casual_rule}
+Return ONLY a JSON array of strings, e.g. ["bullet 1"].
 
 Rules:
 - Answer ONLY from the provided company data and intelligence brief. Do not invent facts.
-- Intelligence sections marked kind "hypothesis" are hypotheses — say so briefly if you cite them.
-- Intelligence sections marked kind "fact" or "observation" are stronger ground.
-- If context lacks detail for the question, say "detail kam hai" and suggest what to ask next.
-- Focus on fit, problems Ankit can solve, and potential entry points — not generic praise.
-- Avoid these phrases: {avoid or "synergy, great fit, leverage"}.
+- Hypothesis intel = hypothesis; fact/observation = stronger ground.
+- Detail kam ho to "detail kam hai" + ek follow-up sawaal.
+- Focus on fit, problems Ankit can solve, entry points — not generic praise.
+- Avoid: {avoid or "synergy, great fit, leverage"}.
 
 Example tone:
-{examples or "- Tum yahan systems + product dono chala sakte ho"}"""
+{examples or "- Systems + product dono chala sakte ho"}"""
 
 
 def _history_messages(history: list[dict[str, Any]] | None) -> list[dict[str, str]]:
@@ -215,18 +256,22 @@ def _build_messages(
     return messages
 
 
-def parse_bullets(text: str) -> list[str]:
+def parse_bullets(text: str, *, max_bullets: int = MAX_BULLETS) -> list[str]:
     stripped = text.strip()
     if not stripped:
         return []
+
+    def _normalize(items: list[Any]) -> list[str]:
+        bullets = [_truncate_bullet(str(item)) for item in items if str(item).strip()]
+        return [bullet for bullet in bullets if bullet][:max_bullets]
 
     if stripped.startswith("["):
         try:
             parsed = json.loads(stripped)
             if isinstance(parsed, list):
-                bullets = [str(item).strip() for item in parsed if str(item).strip()]
+                bullets = _normalize(parsed)
                 if bullets:
-                    return bullets[:MAX_BULLETS]
+                    return bullets
         except json.JSONDecodeError:
             pass
 
@@ -235,9 +280,9 @@ def parse_bullets(text: str) -> list[str]:
         try:
             parsed = json.loads(match.group())
             if isinstance(parsed, list):
-                bullets = [str(item).strip() for item in parsed if str(item).strip()]
+                bullets = _normalize(parsed)
                 if bullets:
-                    return bullets[:MAX_BULLETS]
+                    return bullets
         except json.JSONDecodeError:
             pass
 
@@ -245,8 +290,10 @@ def parse_bullets(text: str) -> list[str]:
     for line in stripped.splitlines():
         cleaned = re.sub(r"^[-*•]\s*", "", line.strip())
         if cleaned:
-            lines.append(cleaned)
-    return lines[:MAX_BULLETS] if lines else [stripped[:280]]
+            lines.append(_truncate_bullet(cleaned))
+    if lines:
+        return lines[:max_bullets]
+    return [_truncate_bullet(stripped)]
 
 
 def _anthropic_model() -> str:
@@ -263,8 +310,8 @@ def _call_anthropic(
     client = Anthropic(api_key=api_key)
     response = client.messages.create(
         model=_anthropic_model(),
-        max_tokens=400,
-        temperature=0.4,
+        max_tokens=180,
+        temperature=0.35,
         system=system_prompt,
         messages=messages,
     )
@@ -285,8 +332,8 @@ def _call_openai(
     response = client.chat.completions.create(
         model=OPENAI_MODEL,
         messages=openai_messages,
-        temperature=0.4,
-        max_tokens=400,
+        temperature=0.35,
+        max_tokens=180,
     )
     return (response.choices[0].message.content or "").strip()
 
@@ -306,7 +353,8 @@ def answer_with_llm(
 
     profile = profile or load_profile()
     context = build_chat_context(company, report, profile, action)
-    system_prompt = _build_system_prompt(profile)
+    bullet_cap = _bullet_cap(question)
+    system_prompt = _build_system_prompt(profile, question=question)
     messages = _build_messages(context, history, question)
 
     try:
@@ -318,7 +366,7 @@ def answer_with_llm(
         logger.warning("LLM chat failed (%s): %s", provider, exc)
         raise LLMChatError(str(exc)) from exc
 
-    bullets = parse_bullets(content)
+    bullets = parse_bullets(content, max_bullets=bullet_cap)
     if not bullets:
         raise LLMChatError("Empty LLM response")
-    return bullets[:MAX_BULLETS]
+    return bullets[:bullet_cap]

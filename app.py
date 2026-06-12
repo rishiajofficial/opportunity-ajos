@@ -193,6 +193,28 @@ APP_CSS = """
         .review-layout [data-testid="column"]:first-child .company-card {
             margin-top: 0;
         }
+        .review-chat-column [data-testid="stChatMessage"] {
+            padding: 0.35rem 0;
+        }
+        .review-chat-column [data-testid="stChatMessage"] p {
+            font-size: 0.86rem;
+            line-height: 1.35;
+            margin: 0.15rem 0;
+        }
+        .review-chat-column [data-testid="stChatMessage"] ul {
+            font-size: 0.86rem;
+            line-height: 1.35;
+            margin: 0.15rem 0 0.35rem;
+            padding-left: 1.1rem;
+        }
+        .review-chat-column [data-testid="stChatMessage"] li {
+            margin-bottom: 0.2rem;
+        }
+        .review-chat-column [data-testid="stVerticalBlockBorderWrapper"] {
+            border: 1px solid #e4ebe6;
+            border-radius: 12px;
+            margin-bottom: 0.5rem;
+        }
     }
     [data-testid="stTabs"] {
         background: #fff;
@@ -367,6 +389,29 @@ APP_CSS = """
         color: #7a5a5a !important;
         font-weight: 700 !important;
     }
+    .focus-steps {
+        display: flex;
+        gap: 0.4rem;
+        flex-wrap: wrap;
+        margin: 0.5rem 0 0.85rem;
+    }
+    .focus-step {
+        background: #f4f7f5;
+        border: 1px solid #e4ebe6;
+        border-radius: 999px;
+        color: #8a9a92;
+        font-size: 0.76rem;
+        font-weight: 700;
+        padding: 0.28rem 0.7rem;
+    }
+    .focus-step.active {
+        background: #e7efe9;
+        border-color: #28705a;
+        color: #173f34;
+    }
+    .focus-step.done {
+        color: #28705a;
+    }
 </style>
 """
 
@@ -480,10 +525,27 @@ def find_company_row(companies_df: pd.DataFrame, company_name: str) -> pd.Series
     return companies_df.loc[companies_df["company"] == company_name].iloc[0]
 
 
+FOCUS_STEPS = ("overview", "draft", "send")
+
+
 def init_session_view() -> None:
     st.session_state.setdefault("ajos_view", "review")
     st.session_state.setdefault("ajos_focus_company", None)
+    st.session_state.setdefault("ajos_focus_return_view", "review")
     st.session_state.setdefault("company_chats", {})
+
+
+def _focus_step_key(company_name: str) -> str:
+    return f"ajos_focus_step::{company_name}"
+
+
+def get_focus_step(company_name: str) -> str:
+    step = st.session_state.get(_focus_step_key(company_name), "overview")
+    return step if step in FOCUS_STEPS else "overview"
+
+
+def set_focus_step(company_name: str, step: str) -> None:
+    st.session_state[_focus_step_key(company_name)] = step
 
 
 def chat_history(company_name: str) -> list[dict]:
@@ -491,15 +553,28 @@ def chat_history(company_name: str) -> list[dict]:
     return chats.setdefault(company_name, [])
 
 
+MAX_CHAT_TURNS = 8
+
+
 def append_chat_message(company_name: str, role: str, bullets: list[str]) -> None:
-    chat_history(company_name).append({"role": role, "bullets": bullets})
+    history = chat_history(company_name)
+    history.append({"role": role, "bullets": bullets})
+    if len(history) > MAX_CHAT_TURNS * 2:
+        del history[: -MAX_CHAT_TURNS * 2]
 
 
 def render_chat_messages(company_name: str) -> None:
-    for message in chat_history(company_name):
-        with st.chat_message(message["role"]):
-            for bullet in message["bullets"]:
-                st.write(f"- {bullet}")
+    messages = chat_history(company_name)
+    if not messages:
+        return
+    with st.container(height=300, border=False):
+        for message in messages:
+            with st.chat_message(message["role"]):
+                bullets = message.get("bullets") or []
+                if len(bullets) == 1:
+                    st.markdown(bullets[0])
+                else:
+                    st.markdown("\n".join(f"- {bullet}" for bullet in bullets))
 
 
 def _answer_chat_question(
@@ -535,9 +610,7 @@ def render_company_chat(
     has_intel = report is not None
 
     mode_label = get_llm_mode_label()
-    st.caption(
-        f"Jo poochna ho likho — jawab {mode_label.lower()} se aayega. ({mode_label})"
-    )
+    st.caption(f"Short answers · {mode_label}")
     render_chat_messages(company_name)
 
     suggest_cols = st.columns(min(3, len(suggested_questions(has_intel))))
@@ -620,9 +693,11 @@ def render_occasional_feedback(
             st.rerun()
 
 
-def open_focus_view(company_name: str) -> None:
+def open_focus_view(company_name: str, *, return_view: str = "review") -> None:
     st.session_state.ajos_view = "focus"
     st.session_state.ajos_focus_company = company_name
+    st.session_state.ajos_focus_return_view = return_view
+    st.session_state[_focus_step_key(company_name)] = "overview"
 
 
 def render_kind_badge(kind: str) -> None:
@@ -1142,10 +1217,10 @@ def _handle_review_decision(
             merged = approve_candidate(candidate_id)
             load_data.clear()
             record_review_decision(learning_state, merged, "interested")
-            open_focus_view(merged["company"])
+            open_focus_view(merged["company"], return_view="review")
         else:
             record_review_decision(learning_state, company_dict, "interested")
-            open_focus_view(company["company"])
+            open_focus_view(company["company"], return_view="review")
     elif decision == "unclear":
         if is_discovered and candidate_id:
             reject_candidate(candidate_id, reason=reason or "Copy unclear")
@@ -1243,9 +1318,14 @@ def render_review_actions(
 
 def switch_view(view: str) -> None:
     st.session_state.ajos_view = view
-    if view == "review":
+    if view != "focus":
         st.session_state.ajos_focus_company = None
     st.rerun()
+
+
+def leave_focus_view() -> None:
+    return_view = st.session_state.get("ajos_focus_return_view", "review")
+    switch_view(return_view)
 
 
 def render_review_header(
@@ -1318,7 +1398,7 @@ def render_sidebar_dashboard(
         if view == "focus":
             st.caption("Next steps open")
             if st.button("← Back to queue", key="sidebar-focus-back", use_container_width=True):
-                switch_view("review")
+                leave_focus_view()
         else:
             nav = st.radio(
                 "View",
@@ -1583,7 +1663,7 @@ def render_review_screen(
             candidate_id=current_item.get("candidate_id"),
         )
     with chat_col:
-        st.markdown('<div class="review-layout"></div>', unsafe_allow_html=True)
+        st.markdown('<div class="review-layout review-chat-column"></div>', unsafe_allow_html=True)
         render_occasional_feedback(learning_state, learning_questions, current["company"])
         render_company_chat(current, mode="explore", profile=profile)
 
@@ -1605,11 +1685,124 @@ def render_company_picker(
             key=f"{list_key}-{row['company']}",
             use_container_width=True,
         ):
-            open_focus_view(row["company"])
+            open_focus_view(row["company"], return_view=list_key)
             st.rerun()
     if st.button("← Back to queue", key=f"back-{list_key}", use_container_width=True):
         st.session_state.ajos_view = "review"
         st.rerun()
+
+
+def render_focus_step_indicator(current: str) -> None:
+    labels = {"overview": "Next step", "draft": "Draft", "send": "Send"}
+    current_idx = FOCUS_STEPS.index(current)
+    parts: list[str] = []
+    for index, step_id in enumerate(FOCUS_STEPS):
+        if index < current_idx:
+            css = "focus-step done"
+        elif index == current_idx:
+            css = "focus-step active"
+        else:
+            css = "focus-step"
+        parts.append(f'<span class="{css}">{index + 1}. {labels[step_id]}</span>')
+    st.markdown(f'<div class="focus-steps">{"".join(parts)}</div>', unsafe_allow_html=True)
+
+
+def render_focus_nav(company_name: str, step: str) -> None:
+    back_col, queue_col, _ = st.columns([1, 1, 2])
+    with back_col:
+        if step != "overview":
+            previous = FOCUS_STEPS[FOCUS_STEPS.index(step) - 1]
+            if st.button("← Back", key=f"focus-prev-{step}", use_container_width=True):
+                set_focus_step(company_name, previous)
+                st.rerun()
+    with queue_col:
+        if st.button("← Queue", key="focus-back-queue", use_container_width=True):
+            leave_focus_view()
+
+
+def render_focus_overview_step(
+    company: pd.Series,
+    profile: dict,
+    learning_state: dict,
+    action: dict,
+) -> None:
+    render_company_card(company, label="Next steps")
+    render_action_surface(action)
+    with st.expander("Why this step?", expanded=False):
+        st.write(action["opportunity_summary"])
+        for reason in action["why_recommended"][:4]:
+            st.write(f"- {shorten_bullet(reason)}")
+    if st.button(
+        "Draft edit karo →",
+        key=f"focus-to-draft-{company['company']}",
+        type="primary",
+        use_container_width=True,
+    ):
+        set_focus_step(company["company"], "draft")
+        st.rerun()
+    if st.button(
+        "Naya suggestion",
+        key=f"focus-refresh-{company['company']}",
+        use_container_width=True,
+    ):
+        refresh_recommendation(company.to_dict(), profile, learning_state)
+        set_focus_step(company["company"], "overview")
+        st.rerun()
+
+
+def render_focus_draft_step(company: pd.Series, action: dict) -> None:
+    email_draft = action["drafts"]["email"]
+    target_contact = action.get("target_contact")
+    if target_contact:
+        st.caption(f"To: {target_contact['name']} · {target_contact['title']}")
+    with st.form(f"focus-draft-{action['action_id']}"):
+        email_to = st.text_input("To (email)", value=email_draft.get("to", ""))
+        email_subject = st.text_input("Subject", value=email_draft["subject"])
+        email_body = st.text_area("Message", value=email_draft["body"], height=150)
+        with st.expander("LinkedIn draft"):
+            linkedin_body = st.text_area(
+                "LinkedIn",
+                value=action["drafts"]["linkedin"]["body"],
+                height=90,
+                label_visibility="collapsed",
+            )
+        if st.form_submit_button("Save & continue →", use_container_width=True, type="primary"):
+            update_action_drafts(
+                company["company"],
+                action["action_id"],
+                email_to=email_to,
+                email_subject=email_subject,
+                email_body=email_body,
+                linkedin_body=linkedin_body,
+            )
+            set_focus_step(company["company"], "send")
+            st.rerun()
+
+
+def render_focus_send_step(
+    company: pd.Series,
+    profile: dict,
+    learning_state: dict,
+    action: dict,
+) -> None:
+    recipient = resolve_draft_recipient(action)
+    target_contact = action.get("target_contact")
+    mailto_url, mailto_warning = build_mailto_link(action)
+    mail_label = "Open mail app"
+    if recipient:
+        mail_label = f"Send mail → {recipient}"
+    elif target_contact:
+        mail_label = f"Send mail → {target_contact['name']}"
+
+    st.link_button(mail_label, mailto_url, type="primary", use_container_width=True)
+    if mailto_warning:
+        st.caption("Draft shortened so the mobile mail app can open reliably.")
+    if not recipient:
+        st.caption("Email missing? ← Back se draft mein add karo.")
+
+    with st.expander("Track progress", expanded=False):
+        render_track_tab(company, profile, learning_state)
+    st.link_button("Open website", company["website"], use_container_width=True)
 
 
 def render_focus_view(
@@ -1618,26 +1811,23 @@ def render_focus_view(
     profile: dict,
     learning_state: dict,
 ) -> None:
-    if st.button("← Back to queue", key="focus-back", use_container_width=True):
-        switch_view("review")
-
+    company_name = company["company"]
+    step = get_focus_step(company_name)
     action = ensure_recommendation(company.to_dict(), profile, learning_state)
+
     main_col, chat_col = st.columns([11, 9], gap="large")
     with main_col:
-        render_company_card(company, label="Next steps")
-        render_action_surface(action)
-        render_action_details(
-            company,
-            profile,
-            learning_state,
-            action,
-            inline_draft=True,
-        )
-        with st.expander("Track progress", expanded=False):
-            render_track_tab(company, profile, learning_state)
-        st.link_button("Open website", company["website"], use_container_width=True)
+        render_focus_nav(company_name, step)
+        render_focus_step_indicator(step)
+        if step == "overview":
+            render_focus_overview_step(company, profile, learning_state, action)
+        elif step == "draft":
+            render_focus_draft_step(company, action)
+        else:
+            render_focus_send_step(company, profile, learning_state, action)
     with chat_col:
-        st.caption("Questions? Ask here — draft edit left side pe hai.")
+        st.markdown('<div class="review-chat-column"></div>', unsafe_allow_html=True)
+        st.caption("Short answers · draft edit left side pe hai.")
         render_company_chat(company, mode="action", action=action, profile=profile)
 
 
