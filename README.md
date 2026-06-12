@@ -79,38 +79,42 @@ are editorial hypotheses for exploration, not objective company assessments.
 `data/ankit_profile.json` is the editable source of truth for Ankit's current
 positioning, capabilities, themes, geographies, and possible role patterns.
 
-## Background Discovery Agent
+## Background Discovery Agent (Cloud-first)
 
-While Cursor IDE is open, a discovery agent can research new opportunities in the
-background and queue them for review.
+A **Cursor Cloud Automation** researches new opportunities on a schedule — no local
+PC or open IDE required. The agent reads [`data/discovery/config.json`](data/discovery/config.json)
+(countries, themes, industries, pause toggle), researches candidates, commits to
+GitHub, and Streamlit Cloud rebuilds with the updated queue.
 
-**Start the loop** in the Cursor Agents window:
+**Setup:** follow [`CLOUD_DISCOVERY_AUTOMATION.md`](CLOUD_DISCOVERY_AUTOMATION.md) and
+[`automation/ajos-discovery-setup.md`](automation/ajos-discovery-setup.md).
 
-```text
-/loop 3h Research new opportunities per DISCOVERY_AGENT.md. Max 3 candidates. Run notify script if strong match.
-```
+**Search scope:** use the **Discovery** expander in the AJOS dashboard, then push
+`data/discovery/config.json` to GitHub so the cloud agent picks up changes.
 
-The agent reads alignment memory and proposals, researches up to 3 candidates per
-run, and writes them via `discovery_engine.py`. Strong matches (weighted score ≥
-85) trigger a Linux desktop notification:
+Discovered opportunities appear first in the review queue with a **Discovered**
+badge. Pass rejects them; Save or Interested merges them into `companies.csv`.
+
+Strong matches (score ≥ `notify_threshold` in config) can trigger an optional
+**Slack** post from the automation. Local desktop notify is for dev only:
 
 ```bash
 python scripts/notify_discovery.py --message "New opportunity: <name> in <theme> — open AJOS"
 ```
 
-Discovered opportunities appear first in the review queue with a **Discovered**
-badge. Pass rejects them; Save or Interested merges them into `companies.csv`.
-
-See [`DISCOVERY_AGENT.md`](DISCOVERY_AGENT.md) for full agent instructions.
+See [`DISCOVERY_AGENT.md`](DISCOVERY_AGENT.md) for agent rules.
 
 Manual utilities:
 
 ```bash
+python discovery_engine.py show-config
 python discovery_engine.py add --json @/tmp/candidate.json
 python discovery_engine.py list-pending
 python discovery_engine.py list-rejected
 python discovery_engine.py record-run --themes "Wellness & Mental Wellbeing" --added 1
 ```
+
+**Legacy (dev):** `/loop 3h` in Cursor Agents while IDE is open — see DISCOVERY_AGENT.md.
 
 ## Learning Layer
 
@@ -141,6 +145,9 @@ AJOS never automatically edits `MEMORY.md`, `DECISIONS.md`, `ROADMAP.md`, or
 ├── app.py
 ├── discovery_engine.py
 ├── DISCOVERY_AGENT.md
+├── CLOUD_DISCOVERY_AUTOMATION.md
+├── automation
+│   └── ajos-discovery-setup.md
 ├── learning.py
 ├── scripts
 │   └── notify_discovery.py
@@ -148,6 +155,7 @@ AJOS never automatically edits `MEMORY.md`, `DECISIONS.md`, `ROADMAP.md`, or
 │   ├── ankit_profile.json
 │   ├── companies.csv
 │   ├── discovery
+│   │   ├── config.json
 │   │   ├── candidates.json
 │   │   └── runs.json
 │   └── learning

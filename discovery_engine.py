@@ -12,9 +12,12 @@ from company_intelligence import company_to_slug, save_json, load_json
 DISCOVERY_DIR = Path(__file__).parent / "data" / "discovery"
 CANDIDATES_PATH = DISCOVERY_DIR / "candidates.json"
 RUNS_PATH = DISCOVERY_DIR / "runs.json"
+CONFIG_PATH = DISCOVERY_DIR / "config.json"
 COMPANIES_PATH = Path(__file__).parent / "data" / "companies.csv"
+PROFILE_PATH = Path(__file__).parent / "data" / "ankit_profile.json"
 
 NOTIFY_THRESHOLD = 85
+DEFAULT_MAX_CANDIDATES_PER_RUN = 3
 VALID_STATUSES = {"pending", "approved", "rejected", "merged"}
 SCORE_WEIGHTS = {
     "theme": 0.30,
@@ -32,6 +35,78 @@ def default_candidates_store() -> dict[str, Any]:
 
 def default_runs_store() -> dict[str, Any]:
     return {"runs": []}
+
+
+def default_config() -> dict[str, Any]:
+    profile = load_json(PROFILE_PATH, {})
+    return {
+        "enabled": True,
+        "active_countries": list(profile.get("target_geographies", [])),
+        "active_themes": list(profile.get("priority_themes", [])),
+        "active_industries": [],
+        "exclude_keywords": [],
+        "max_candidates_per_run": DEFAULT_MAX_CANDIDATES_PER_RUN,
+        "notify_threshold": NOTIFY_THRESHOLD,
+        "updated_at": now_iso(),
+    }
+
+
+def validate_config(config: dict[str, Any]) -> None:
+    required = (
+        "enabled",
+        "active_countries",
+        "active_themes",
+        "active_industries",
+        "exclude_keywords",
+        "max_candidates_per_run",
+        "notify_threshold",
+    )
+    for field in required:
+        if field not in config:
+            raise ValueError(f"Discovery config missing required field: {field}")
+
+    if not isinstance(config["enabled"], bool):
+        raise ValueError("config.enabled must be a boolean.")
+
+    for list_field in ("active_countries", "active_themes", "active_industries", "exclude_keywords"):
+        value = config[list_field]
+        if not isinstance(value, list):
+            raise ValueError(f"config.{list_field} must be a list.")
+        if not all(isinstance(item, str) for item in value):
+            raise ValueError(f"config.{list_field} must contain strings only.")
+
+    max_candidates = config["max_candidates_per_run"]
+    if not isinstance(max_candidates, int) or max_candidates < 0 or max_candidates > 10:
+        raise ValueError("config.max_candidates_per_run must be an integer from 0 to 10.")
+
+    threshold = config["notify_threshold"]
+    if not isinstance(threshold, int) or threshold < 0 or threshold > 100:
+        raise ValueError("config.notify_threshold must be an integer from 0 to 100.")
+
+
+def load_config() -> dict[str, Any]:
+    stored = load_json(CONFIG_PATH, default_config())
+    merged = default_config()
+    merged.update(stored)
+    validate_config(merged)
+    return merged
+
+
+def save_config(config: dict[str, Any]) -> dict[str, Any]:
+    record = default_config()
+    record.update(config)
+    record["updated_at"] = now_iso()
+    validate_config(record)
+    save_json(CONFIG_PATH, record)
+    return record
+
+
+def is_discovery_enabled() -> bool:
+    return bool(load_config()["enabled"])
+
+
+def get_notify_threshold() -> int:
+    return int(load_config()["notify_threshold"])
 
 
 def website_host(website: str) -> str:
@@ -219,7 +294,7 @@ def get_pending_candidates() -> list[dict[str, Any]]:
 
 
 def should_notify(candidate: dict[str, Any]) -> bool:
-    return weighted_base_score(candidate["base_scores"]) >= NOTIFY_THRESHOLD
+    return weighted_base_score(candidate["base_scores"]) >= get_notify_threshold()
 
 
 def candidate_to_company_row(candidate: dict[str, Any]) -> dict[str, str]:
@@ -383,6 +458,7 @@ def main() -> None:
 
     subparsers.add_parser("list-pending", help="List pending discovery candidates")
     subparsers.add_parser("list-rejected", help="List rejected candidate slugs")
+    subparsers.add_parser("show-config", help="Print discovery config JSON")
 
     record_parser = subparsers.add_parser("record-run", help="Record a discovery run")
     record_parser.add_argument("--themes", nargs="+", required=True)
@@ -408,6 +484,10 @@ def main() -> None:
 
     if args.command == "list-rejected":
         print(json.dumps(sorted(get_rejected_slugs()), indent=2))
+        return
+
+    if args.command == "show-config":
+        print(json.dumps(load_config(), indent=2))
         return
 
     if args.command == "record-run":

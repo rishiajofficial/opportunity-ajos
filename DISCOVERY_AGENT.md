@@ -1,6 +1,8 @@
 # AJOS Discovery Agent
 
-Background opportunity research for the Opportunity Engine. Runs while Cursor IDE is open.
+Opportunity research for the Opportunity Engine. **Primary runtime: Cursor Cloud Automation** (scheduled, no local PC). See [`CLOUD_DISCOVERY_AUTOMATION.md`](CLOUD_DISCOVERY_AUTOMATION.md).
+
+Legacy: local `/loop` while Cursor IDE is open (dev/testing only).
 
 ## Mission
 
@@ -9,26 +11,30 @@ Find founders, companies, and emerging environments where Ankit can create dispr
 ## Before each run — read these files
 
 1. `AGENTS.md` — mission and Ankit profile context
-2. `data/ankit_profile.json` — capabilities, themes, geographies
-3. `data/learning/state.json` — especially `alignment_memory`
-4. `data/learning/proposals.json` — `opportunity_source_suggestions`
-5. `data/companies.csv` — existing companies (do not duplicate)
-6. `data/discovery/candidates.json` — pending and rejected candidates
+2. **`data/discovery/config.json`** — enabled flag, countries, themes, industries, exclude keywords, caps
+3. `data/ankit_profile.json` — capabilities and role patterns
+4. `data/learning/state.json` — especially `alignment_memory` (committed copy on GitHub)
+5. `data/learning/proposals.json` — `opportunity_source_suggestions`
+6. `data/companies.csv` — existing companies (do not duplicate)
+7. `data/discovery/candidates.json` — pending and rejected candidates
 
-Also check rejected slugs:
+If `config.enabled` is `false`, **stop immediately** and record a run with `candidates_added: 0`.
 
 ```bash
+python discovery_engine.py show-config
 python discovery_engine.py list-rejected
 ```
 
 ## Each run — tasks
 
-1. Pick **1–2 themes** from alignment memory and liked feedback patterns.
-2. Research founders, accelerators, and emerging companies in target geographies:
-   - UAE, Singapore, India, Netherlands, Finland, Switzerland
-3. Propose **0–3 candidates max** per run. Quality over quantity.
-4. Every candidate must have a **verified website** and at least one `source_url`.
-5. Add candidates only through `discovery_engine.py` — never hand-edit JSON.
+1. Read **`active_themes`** and **`active_countries`** from `config.json` (not hardcoded lists).
+2. Use **`active_industries`** as extra search tags; skip anything matching **`exclude_keywords`**.
+3. Cross-check alignment memory and liked feedback — prefer themes/countries that match both config and memory when possible.
+4. Propose **0–N candidates** where N = `config.max_candidates_per_run` (quality over quantity).
+5. Every candidate must have a **verified website** and at least one `source_url`.
+6. Candidate `country` must be in `active_countries`; `theme` should align with `active_themes`.
+7. Add candidates only through `discovery_engine.py` — never hand-edit JSON.
+8. **Cloud runs:** commit and push `data/discovery/candidates.json` and `data/discovery/runs.json` to `main` when done.
 
 ## Candidate JSON shape
 
@@ -54,27 +60,24 @@ python discovery_engine.py list-rejected
 }
 ```
 
-Valid themes: `Future of Work`, `Creator Economy`, `Education`, `Wellness & Mental Wellbeing`.
+Valid themes include: `Future of Work`, `Creator Economy`, `Education`, `Wellness & Mental Wellbeing`, `Human Potential`, and any theme listed in `config.active_themes`.
 
 Score each `base_scores` field 0–100. Weighted average uses 30/30/25/15.
 
 ## Add a candidate
 
-Save candidate JSON to a temp file, then:
-
 ```bash
 python discovery_engine.py add --json @/tmp/candidate.json
 ```
 
-If stderr prints `NOTIFY`, send a desktop alert (max one per run):
+If stderr prints `NOTIFY` (score ≥ `config.notify_threshold`):
 
-```bash
-python scripts/notify_discovery.py --message "New opportunity: <name> in <theme> — open AJOS"
-```
+- **Cloud automation:** post one Slack message (if configured) — see `CLOUD_DISCOVERY_AUTOMATION.md`
+- **Local dev:** `python scripts/notify_discovery.py --message "New opportunity: <name> in <theme> — open AJOS"`
+
+Max **one** notification per run.
 
 ## After adding candidates
-
-Record the run:
 
 ```bash
 python discovery_engine.py record-run --themes "Wellness & Mental Wellbeing" "Human Potential" --added 2
@@ -87,16 +90,15 @@ python discovery_engine.py record-run --themes "Wellness & Mental Wellbeing" "Hu
 - Do **not** auto-edit `MEMORY.md`, `DECISIONS.md`, `ROADMAP.md`, or `VISION.md`.
 - Do **not** send emails or LinkedIn messages.
 - Do **not** scrape aggressively or bypass robots.txt.
-- Notify only when weighted score ≥ 85. Max **one** notification per run.
 
 ## Optional — on approval
 
 When a candidate is merged into the pipeline, a follow-up run may create a skeleton intelligence report at `data/intelligence/companies/{slug}.json` using `company_intelligence.py` schema with `hypothesis` kinds only.
 
-## Loop command (Cursor Agents window)
+## Legacy — local loop (dev only)
 
 ```
-/loop 3h Research new opportunities per DISCOVERY_AGENT.md. Max 3 candidates. Run notify script if strong match.
+/loop 3h Research new opportunities per DISCOVERY_AGENT.md. Read data/discovery/config.json first. Max candidates per config. Run notify script if strong match.
 ```
 
 The loop only runs while Cursor IDE and the monitored shell stay alive.

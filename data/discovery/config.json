@@ -1,0 +1,24 @@
+{
+  "enabled": true,
+  "active_countries": [
+    "UAE",
+    "India",
+    "Netherlands",
+    "Finland",
+    "Switzerland"
+  ],
+  "active_themes": [
+    "Wellness & Mental Wellbeing",
+    "Human Potential"
+  ],
+  "active_industries": [
+    "workplace wellbeing",
+    "creator tools"
+  ],
+  "exclude_keywords": [
+    "crypto"
+  ],
+  "max_candidates_per_run": 3,
+  "notify_threshold": 85,
+  "updated_at": "2026-06-12T06:01:43+00:00"
+}

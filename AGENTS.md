@@ -69,3 +69,22 @@ Validate.
 Then improve.
 
 Avoid overengineering.
+
+
+## Daily highlights (automatic)
+
+At the end of any meaningful agent session, update **today's** file under `highlights/YYYY-MM-DD.md` without waiting to be asked.
+
+**One file per calendar day.** If the file exists, append or merge — do not create duplicates.
+
+**Structure:**
+
+1. **Top 10** — numbered list of the day's most important outcomes, decisions, or blockers (newest/most important first).
+2. **Session log** — 10–20 bullets total, grouped under three labels:
+   - *Decided* — choices made with the user or architecture locked in.
+   - *Built & shipped* — code, data, deploy, commits.
+   - *Learned & open* — status, gaps, next steps, things still pending.
+
+Keep bullets short. Skip trivial turns (e.g. pure git push with no product change) unless it unblocked deploy.
+
+See [`highlights/2026-06-11.md`](highlights/2026-06-11.md) for the reference format.

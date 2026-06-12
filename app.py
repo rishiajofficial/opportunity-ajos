@@ -33,7 +33,9 @@ from discovery_engine import (
     approve_candidate,
     build_review_queue,
     get_last_run,
+    load_config,
     reject_candidate,
+    save_config,
 )
 from learning import (
     answer_question,
@@ -69,6 +71,7 @@ PRIORITY_THEMES = [
     "Education",
     "Wellness & Mental Wellbeing",
 ]
+DISCOVERY_THEME_OPTIONS = PRIORITY_THEMES + ["Human Potential"]
 SCORE_WEIGHTS = {
     "theme_score": 0.30,
     "capability_score": 0.30,
@@ -951,16 +954,124 @@ def render_review_header(
             st.rerun()
 
 
-def render_discovery_footer() -> None:
-    last_run = get_last_run()
-    if not last_run:
-        return
-    themes = ", ".join(last_run.get("themes_searched", []))
-    completed_at = last_run.get("completed_at", "")
-    st.caption(
-        f"Last discovery run: {completed_at} · themes: {themes} · "
-        f"added {last_run.get('candidates_added', 0)}"
+def _lines_to_list(text: str) -> list[str]:
+    return [line.strip() for line in text.splitlines() if line.strip()]
+
+
+def render_discovery_panel() -> None:
+    config = load_config()
+    country_options = sorted(
+        set(TARGET_GEOGRAPHIES) | set(config.get("active_countries", []))
     )
+    theme_options = sorted(
+        set(DISCOVERY_THEME_OPTIONS) | set(config.get("active_themes", []))
+    )
+
+    with st.expander("Discovery", expanded=False):
+        status = "on" if config["enabled"] else "paused"
+        st.caption(
+            f"Cloud agent searches from `data/discovery/config.json` · status: **{status}**"
+        )
+        if config.get("updated_at"):
+            st.caption(f"Config updated: {config['updated_at']}")
+
+        enabled = st.toggle(
+            "Discovery enabled",
+            value=bool(config["enabled"]),
+            key="discovery-enabled",
+        )
+        active_countries = st.multiselect(
+            "Search countries",
+            country_options,
+            default=[
+                c for c in config.get("active_countries", []) if c in country_options
+            ],
+            key="discovery-countries",
+        )
+        new_country = st.text_input(
+            "Add country",
+            placeholder="e.g. Germany",
+            key="discovery-new-country",
+        )
+        if new_country.strip():
+            extra = new_country.strip()
+            if extra not in active_countries:
+                active_countries = active_countries + [extra]
+                st.caption(f"Will include: {extra}")
+
+        active_themes = st.multiselect(
+            "Search themes",
+            theme_options,
+            default=[t for t in config.get("active_themes", []) if t in theme_options],
+            key="discovery-themes",
+        )
+        industries_text = st.text_area(
+            "Industries (one per line)",
+            value="\n".join(config.get("active_industries", [])),
+            height=80,
+            key="discovery-industries",
+            help="Extra search tags for the cloud agent, e.g. workplace wellbeing",
+        )
+        exclude_text = st.text_area(
+            "Exclude keywords (one per line)",
+            value="\n".join(config.get("exclude_keywords", [])),
+            height=60,
+            key="discovery-exclude",
+        )
+        limit_col, threshold_col = st.columns(2)
+        with limit_col:
+            max_candidates = st.number_input(
+                "Max candidates per run",
+                min_value=0,
+                max_value=10,
+                value=int(config.get("max_candidates_per_run", 3)),
+                key="discovery-max-candidates",
+            )
+        with threshold_col:
+            notify_threshold = st.slider(
+                "Notify if score ≥",
+                min_value=70,
+                max_value=100,
+                value=int(config.get("notify_threshold", 85)),
+                key="discovery-notify-threshold",
+            )
+
+        if st.button("Save discovery settings", key="discovery-save", type="primary"):
+            countries_to_save = list(active_countries)
+            extra_country = new_country.strip()
+            if extra_country and extra_country not in countries_to_save:
+                countries_to_save.append(extra_country)
+            save_config(
+                {
+                    "enabled": enabled,
+                    "active_countries": countries_to_save,
+                    "active_themes": active_themes,
+                    "active_industries": _lines_to_list(industries_text),
+                    "exclude_keywords": _lines_to_list(exclude_text),
+                    "max_candidates_per_run": int(max_candidates),
+                    "notify_threshold": int(notify_threshold),
+                }
+            )
+            st.success(
+                "Saved locally. Push `data/discovery/config.json` to GitHub for the "
+                "cloud agent to use these settings."
+            )
+            st.rerun()
+
+
+def render_discovery_footer() -> None:
+    config = load_config()
+    last_run = get_last_run()
+    status = "on" if config["enabled"] else "paused"
+    if last_run:
+        themes = ", ".join(last_run.get("themes_searched", []))
+        completed_at = last_run.get("completed_at", "")
+        st.caption(
+            f"Discovery {status} · last run: {completed_at} · themes: {themes} · "
+            f"added {last_run.get('candidates_added', 0)}"
+        )
+    else:
+        st.caption(f"Discovery {status} · no runs logged yet")
 
 
 def render_review_screen(
@@ -1148,6 +1259,8 @@ companies_df = companies_df.sort_values(
 )
 
 init_session_view()
+
+render_discovery_panel()
 
 with st.expander("Filters", expanded=False):
     selected_geographies = st.multiselect(
