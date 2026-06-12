@@ -8,7 +8,7 @@ from typing import Any
 
 from company_intelligence import get_current_report, intelligence_status, load_company_intelligence
 from contact_discovery import get_contact_recommendations
-from llm_chat import LLMChatError, answer_with_llm, is_llm_enabled
+from llm_chat import LLMChatError, answer_with_llm, get_active_provider, is_llm_enabled
 
 logger = logging.getLogger(__name__)
 
@@ -132,6 +132,17 @@ def answer_company_question(
             )
         except LLMChatError as exc:
             logger.warning("Falling back to rule-based chat: %s", exc)
+            provider = get_active_provider() or "LLM"
+            bullets = _answer_rule_based(
+                question,
+                company,
+                report,
+                action=action,
+            )
+            error_hint = str(exc).split("\n")[0][:100]
+            return [
+                f"{provider} abhi respond nahi kar paya ({error_hint}) — research snippets:"
+            ] + bullets[:3]
 
     return _answer_rule_based(
         question,

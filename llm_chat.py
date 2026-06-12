@@ -13,7 +13,7 @@ from openai import OpenAI
 
 PROFILE_PATH = Path(__file__).parent / "data" / "ankit_profile.json"
 OPENAI_MODEL = "gpt-4o-mini"
-ANTHROPIC_MODEL = "claude-3-5-haiku-latest"
+ANTHROPIC_MODEL = "claude-haiku-4-5"
 MAX_HISTORY_TURNS = 4
 MAX_BULLETS = 4
 
@@ -27,15 +27,23 @@ class LLMChatError(Exception):
 
 
 def _get_secret(name: str) -> str:
+    # Streamlit Cloud injects root-level secrets as env vars too.
+    env_value = os.environ.get(name, "").strip()
+    if env_value:
+        return env_value
     try:
         import streamlit as st
 
-        value = st.secrets.get(name, "")
-        if value:
-            return str(value).strip()
+        try:
+            return str(st.secrets[name]).strip()
+        except (KeyError, TypeError):
+            pass
+        attr = getattr(st.secrets, name, None)
+        if attr is not None and not callable(attr):
+            return str(attr).strip()
     except Exception:
         pass
-    return os.environ.get(name, "").strip()
+    return ""
 
 
 def get_anthropic_api_key() -> str:
