@@ -1,3 +1,13 @@
 {
-  "items": []
+  "items": [
+    {
+      "queue_id": "1f578e85-af33-421b-a03e-73477c462412",
+      "company": "Futurice",
+      "reason": "Looks relevant. Need to understand more, there should be more about the company, what they are doing currently, wqhat kind of clients they have, and what are they looking for - in the roles generally? Which are the in demand roles at that company.",
+      "source": "learning_feedback",
+      "status": "refined",
+      "created_at": "2026-06-12T07:37:00+00:00",
+      "refined_at": "2026-06-12T07:37:17+00:00"
+    }
+  ]
 }
