@@ -23,7 +23,7 @@ from company_chat import (
     load_report,
     suggested_questions,
 )
-from llm_chat import is_llm_enabled
+from llm_chat import get_llm_mode_label, is_llm_enabled
 from company_intelligence import (
     get_current_report,
     intelligence_status,
@@ -534,7 +534,7 @@ def render_company_chat(
     report = load_report(company_name)
     has_intel = report is not None
 
-    mode_label = "AI answers" if is_llm_enabled() else "Research snippets"
+    mode_label = get_llm_mode_label()
     st.caption(
         f"Jo poochna ho likho — jawab {mode_label.lower()} se aayega. ({mode_label})"
     )

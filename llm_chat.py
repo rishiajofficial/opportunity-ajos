@@ -1,4 +1,4 @@
-"""LLM-powered company chat via OpenAI gpt-4o-mini, grounded in CSV + intelligence briefs."""
+"""LLM-powered company chat — Claude (preferred) or OpenAI, grounded in CSV + intel briefs."""
 
 from __future__ import annotations
 
@@ -7,36 +7,64 @@ import logging
 import os
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
 
 from openai import OpenAI
 
 PROFILE_PATH = Path(__file__).parent / "data" / "ankit_profile.json"
-MODEL = "gpt-4o-mini"
+OPENAI_MODEL = "gpt-4o-mini"
+ANTHROPIC_MODEL = "claude-3-5-haiku-latest"
 MAX_HISTORY_TURNS = 4
 MAX_BULLETS = 4
 
 logger = logging.getLogger(__name__)
+
+Provider = Literal["anthropic", "openai"]
 
 
 class LLMChatError(Exception):
     """Raised when the LLM call fails."""
 
 
-def get_api_key() -> str:
+def _get_secret(name: str) -> str:
     try:
         import streamlit as st
 
-        key = st.secrets.get("OPENAI_API_KEY", "")
-        if key:
-            return str(key).strip()
+        value = st.secrets.get(name, "")
+        if value:
+            return str(value).strip()
     except Exception:
         pass
-    return os.environ.get("OPENAI_API_KEY", "").strip()
+    return os.environ.get(name, "").strip()
+
+
+def get_anthropic_api_key() -> str:
+    return _get_secret("ANTHROPIC_API_KEY")
+
+
+def get_openai_api_key() -> str:
+    return _get_secret("OPENAI_API_KEY")
+
+
+def get_active_provider() -> Provider | None:
+    if get_anthropic_api_key():
+        return "anthropic"
+    if get_openai_api_key():
+        return "openai"
+    return None
 
 
 def is_llm_enabled() -> bool:
-    return bool(get_api_key())
+    return get_active_provider() is not None
+
+
+def get_llm_mode_label() -> str:
+    provider = get_active_provider()
+    if provider == "anthropic":
+        return "Claude answers"
+    if provider == "openai":
+        return "AI answers"
+    return "Research snippets"
 
 
 def load_profile() -> dict[str, Any]:
@@ -89,7 +117,7 @@ def _compact_action(action: dict[str, Any] | None) -> dict[str, Any] | None:
     contact = action.get("target_contact") or {}
     return {
         "recommended_action": action.get("recommended_action", ""),
-        "why_recommended": (action.get("why_recommended") or [])[:3],
+        "why_recommended": (action.get("why_recommended", []))[:3],
         "target_contact": {
             "name": contact.get("name", ""),
             "title": contact.get("title", ""),
@@ -163,6 +191,22 @@ def _history_messages(history: list[dict[str, Any]] | None) -> list[dict[str, st
     return messages
 
 
+def _build_messages(
+    context: str,
+    history: list[dict[str, Any]] | None,
+    question: str,
+) -> list[dict[str, str]]:
+    messages: list[dict[str, str]] = [
+        {
+            "role": "user",
+            "content": f"Company context (ground truth — do not invent beyond this):\n{context}",
+        },
+    ]
+    messages.extend(_history_messages(history))
+    messages.append({"role": "user", "content": question.strip()})
+    return messages
+
+
 def parse_bullets(text: str) -> list[str]:
     stripped = text.strip()
     if not stripped:
@@ -197,6 +241,48 @@ def parse_bullets(text: str) -> list[str]:
     return lines[:MAX_BULLETS] if lines else [stripped[:280]]
 
 
+def _anthropic_model() -> str:
+    return _get_secret("ANTHROPIC_MODEL") or ANTHROPIC_MODEL
+
+
+def _call_anthropic(
+    api_key: str,
+    system_prompt: str,
+    messages: list[dict[str, str]],
+) -> str:
+    from anthropic import Anthropic
+
+    client = Anthropic(api_key=api_key)
+    response = client.messages.create(
+        model=_anthropic_model(),
+        max_tokens=400,
+        temperature=0.4,
+        system=system_prompt,
+        messages=messages,
+    )
+    parts = [block.text for block in response.content if block.type == "text"]
+    return "\n".join(parts).strip()
+
+
+def _call_openai(
+    api_key: str,
+    system_prompt: str,
+    messages: list[dict[str, str]],
+) -> str:
+    client = OpenAI(api_key=api_key)
+    openai_messages: list[dict[str, str]] = [
+        {"role": "system", "content": system_prompt},
+        *messages,
+    ]
+    response = client.chat.completions.create(
+        model=OPENAI_MODEL,
+        messages=openai_messages,
+        temperature=0.4,
+        max_tokens=400,
+    )
+    return (response.choices[0].message.content or "").strip()
+
+
 def answer_with_llm(
     question: str,
     company: dict[str, Any],
@@ -206,33 +292,22 @@ def answer_with_llm(
     action: dict[str, Any] | None = None,
     history: list[dict[str, Any]] | None = None,
 ) -> list[str]:
-    api_key = get_api_key()
-    if not api_key:
-        raise LLMChatError("OPENAI_API_KEY not configured")
+    provider = get_active_provider()
+    if not provider:
+        raise LLMChatError("No LLM API key configured (ANTHROPIC_API_KEY or OPENAI_API_KEY)")
 
     profile = profile or load_profile()
     context = build_chat_context(company, report, profile, action)
-    messages: list[dict[str, str]] = [
-        {"role": "system", "content": _build_system_prompt(profile)},
-        {
-            "role": "user",
-            "content": f"Company context (ground truth — do not invent beyond this):\n{context}",
-        },
-    ]
-    messages.extend(_history_messages(history))
-    messages.append({"role": "user", "content": question.strip()})
+    system_prompt = _build_system_prompt(profile)
+    messages = _build_messages(context, history, question)
 
     try:
-        client = OpenAI(api_key=api_key)
-        response = client.chat.completions.create(
-            model=MODEL,
-            messages=messages,
-            temperature=0.4,
-            max_tokens=400,
-        )
-        content = (response.choices[0].message.content or "").strip()
+        if provider == "anthropic":
+            content = _call_anthropic(get_anthropic_api_key(), system_prompt, messages)
+        else:
+            content = _call_openai(get_openai_api_key(), system_prompt, messages)
     except Exception as exc:
-        logger.warning("LLM chat failed: %s", exc)
+        logger.warning("LLM chat failed (%s): %s", provider, exc)
         raise LLMChatError(str(exc)) from exc
 
     bullets = parse_bullets(content)
