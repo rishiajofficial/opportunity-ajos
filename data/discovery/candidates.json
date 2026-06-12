@@ -1,1 +1,124 @@
-{"candidates": []}
+{
+  "candidates": [
+    {
+      "candidate_id": "openup",
+      "name": "OpenUp",
+      "country": "Netherlands",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://openup.com",
+      "one_liner": "An Amsterdam-based employee mental wellbeing platform offering direct, preventive support for organizations and their teams.",
+      "why_ankit_fits": [
+        "OpenUp sits at the intersection of workplace wellbeing, behavior change, product experience, and organizational systems.",
+        "Ankit can connect mental wellbeing propositions with AI-enabled personalization, manager enablement, and measurable workplace outcomes."
+      ],
+      "problems_to_solve": [
+        "Turn wellbeing from a reactive benefit into a proactive employee growth and resilience system.",
+        "Design product journeys that help HR, managers, and employees act on insights without compromising trust or privacy."
+      ],
+      "suggested_role": "Workplace Wellbeing Product Strategy Advisor",
+      "base_scores": {
+        "theme": 94,
+        "capability": 90,
+        "role": 91,
+        "geography": 91
+      },
+      "source_urls": [
+        {
+          "url": "https://openup.com/nl/",
+          "label": "Company homepage"
+        },
+        {
+          "url": "https://openup.com/mental-health-coaching/",
+          "label": "Employee mental health coaching product page"
+        },
+        {
+          "url": "https://www.eu-startups.com/2026/03/amsterdams-openup-secures-e20-million-to-expand-its-employee-mental-health-platform-across-europe/",
+          "label": "EU-Startups coverage of Amsterdam-based OpenUp"
+        }
+      ],
+      "discovered_at": "2026-06-12T07:31:40+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    },
+    {
+      "candidate_id": "amaha",
+      "name": "Amaha",
+      "country": "India",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://www.amahahealth.com",
+      "one_liner": "An Indian mental healthcare ecosystem providing therapy, psychiatry, self-care, and employee wellbeing programs.",
+      "why_ankit_fits": [
+        "Amaha combines clinical mental healthcare, workplace wellbeing, digital self-care, and education-oriented support journeys.",
+        "Ankit can help translate its ecosystem into clearer product pathways for employees, families, institutions, and employers."
+      ],
+      "problems_to_solve": [
+        "Make preventive mental wellbeing feel accessible before people reach crisis points.",
+        "Use product strategy and responsible AI workflows to improve personalization, engagement, and employer insights while preserving empathy and safety."
+      ],
+      "suggested_role": "Mental Wellbeing Ecosystem Strategy Advisor",
+      "base_scores": {
+        "theme": 96,
+        "capability": 92,
+        "role": 92,
+        "geography": 96
+      },
+      "source_urls": [
+        {
+          "url": "https://www.amahahealth.com/",
+          "label": "Company homepage"
+        },
+        {
+          "url": "https://www.amahahealth.com/services/employee-wellness-programme/main/",
+          "label": "Employee Well-being Programme page"
+        },
+        {
+          "url": "https://www.asiabusinessoutlook.com/services-and-consulting/vendor/amaha-helping-businesses-build-healthier-and-engaged-workforces-with-datadriven-insights-and-solutions-cid-132.html",
+          "label": "Asia Business Outlook profile of Amaha workplace offering"
+        }
+      ],
+      "discovered_at": "2026-06-12T07:31:53+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    },
+    {
+      "candidate_id": "kyan-health",
+      "name": "Kyan Health",
+      "country": "Switzerland",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://www.kyanhealth.com",
+      "one_liner": "A Zurich-based workplace mental health and wellbeing platform combining human care, AI navigation, and organizational insights.",
+      "why_ankit_fits": [
+        "Kyan Health frames employee wellbeing as a system-level workplace capability rather than a disconnected benefit.",
+        "Ankit can bridge AI workflows, product strategy, privacy-sensitive insights, and human-centered behavior change for enterprise teams."
+      ],
+      "problems_to_solve": [
+        "Help organizations move from reactive EAP usage to preventive, measurable wellbeing systems.",
+        "Explore trustworthy AI-supported navigation and aggregated insights that improve care access without weakening employee confidentiality."
+      ],
+      "suggested_role": "AI Workplace Wellbeing Strategy Advisor",
+      "base_scores": {
+        "theme": 95,
+        "capability": 94,
+        "role": 93,
+        "geography": 89
+      },
+      "source_urls": [
+        {
+          "url": "https://www.kyanhealth.com/",
+          "label": "Company homepage"
+        },
+        {
+          "url": "https://www.kyanhealth.com/wellbeing-platform",
+          "label": "Wellbeing platform page"
+        },
+        {
+          "url": "https://ventures.swisscom.com/kyan-health-raises-16-7m-to-upgrade-workplace-wellness-with-ai-powered-preventative-care/",
+          "label": "Swisscom Ventures funding and company profile"
+        }
+      ],
+      "discovered_at": "2026-06-12T07:32:02+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    }
+  ]
+}

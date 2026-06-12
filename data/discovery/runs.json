@@ -1,3 +1,14 @@
 {
-  "runs": []
+  "runs": [
+    {
+      "run_id": "e842f1fe-aa38-42cb-950c-e9a99bbb97ca",
+      "completed_at": "2026-06-12T07:32:11+00:00",
+      "themes_searched": [
+        "Wellness & Mental Wellbeing",
+        "Human Potential"
+      ],
+      "candidates_added": 3,
+      "errors": []
+    }
+  ]
 }
