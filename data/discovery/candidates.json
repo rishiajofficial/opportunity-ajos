@@ -1,1 +1,130 @@
-{"candidates": []}
+{
+  "candidates": [
+    {
+      "candidate_id": "openup",
+      "name": "OpenUp",
+      "country": "Netherlands",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://openup.com",
+      "one_liner": "An Amsterdam-based workplace mental well-being platform giving employees, managers, and HR teams access to preventive support, coaching, and insights.",
+      "why_ankit_fits": [
+        "OpenUp sits at the intersection of workplace wellbeing, behavior change, people analytics, and scalable digital support.",
+        "Ankit can connect employee experience, product strategy, and responsible AI workflows without reducing mental wellbeing to a narrow HR benefit.",
+        "The platform's manager, employee, and HR surfaces fit his systems-thinking strength across multiple stakeholder journeys."
+      ],
+      "problems_to_solve": [
+        "Turn anonymized wellbeing signals into practical interventions that improve resilience, retention, and engagement.",
+        "Design next-generation manager and employee journeys that make preventive support normal before burnout escalates.",
+        "Explore safe AI-assisted personalization and self-guided learning while preserving trust, privacy, and human care."
+      ],
+      "suggested_role": "Workplace Wellbeing Product Strategy Advisor",
+      "base_scores": {
+        "theme": 94,
+        "capability": 91,
+        "role": 92,
+        "geography": 91
+      },
+      "source_urls": [
+        {
+          "url": "https://openup.com/",
+          "label": "Official homepage"
+        },
+        {
+          "url": "https://openup.com/hr-organisations/",
+          "label": "Workplace wellbeing solution page"
+        },
+        {
+          "url": "https://openup.com/press/openup-reaches-milestone-of-1-5-million-users/",
+          "label": "Official Amsterdam press release"
+        }
+      ],
+      "discovered_at": "2026-06-12T06:39:52+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    },
+    {
+      "candidate_id": "amaha",
+      "name": "Amaha",
+      "country": "India",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://www.amahahealth.com",
+      "one_liner": "An India-focused mental healthcare ecosystem offering therapy, psychiatry, self-care, community support, and employee well-being programmes.",
+      "why_ankit_fits": [
+        "Amaha combines clinical care, digital product, community support, and organizational wellbeing in a large underserved mental health market.",
+        "Ankit can bring systems thinking to the full care ecosystem across individuals, families, institutions, and workplaces.",
+        "The employee well-being programme creates room for product strategy, learning design, responsible AI workflows, and data-informed interventions."
+      ],
+      "problems_to_solve": [
+        "Design integrated workplace wellbeing journeys that move from diagnosis and awareness to sustained behavior change.",
+        "Translate anonymized organizational insights into humane, actionable programmes for leaders and employees.",
+        "Explore scalable self-care and community experiences that improve access without weakening clinical trust or safety."
+      ],
+      "suggested_role": "Strategic Advisor, Mental Health Ecosystem & Workplace Wellbeing",
+      "base_scores": {
+        "theme": 96,
+        "capability": 91,
+        "role": 92,
+        "geography": 96
+      },
+      "source_urls": [
+        {
+          "url": "https://www.amahahealth.com/",
+          "label": "Official homepage"
+        },
+        {
+          "url": "https://www.amahahealth.com/about-us/",
+          "label": "Official about page"
+        },
+        {
+          "url": "https://www.amahahealth.com/services/employee-wellness-programme/approach/",
+          "label": "Employee well-being programme"
+        }
+      ],
+      "discovered_at": "2026-06-12T06:40:05+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    },
+    {
+      "candidate_id": "hintsa-performance",
+      "name": "Hintsa Performance",
+      "country": "Finland",
+      "theme": "Human Potential",
+      "website": "https://www.hintsa.com",
+      "one_liner": "A Helsinki-headquartered human performance and wellbeing company helping leaders, athletes, teams, and organizations achieve sustainable success.",
+      "why_ankit_fits": [
+        "Hintsa maps directly to human potential through the connection between purpose, wellbeing, learning, and sustainable performance.",
+        "Ankit can help translate a high-touch coaching method into scalable products, learning systems, and AI-enabled workflows without losing depth.",
+        "The company serves founders, leaders, and organizations under pressure, which fits Ankit's explorer-architect-builder mode."
+      ],
+      "problems_to_solve": [
+        "Create productized pathways that make elite sustainable-performance methods useful to broader teams and organizations.",
+        "Connect coaching, diagnostics, learning, and digital tools into coherent journeys for leaders and critical talent.",
+        "Explore responsible AI support for reflection, habit formation, and coach leverage while preserving human judgment."
+      ],
+      "suggested_role": "Strategic Advisor, Human Potential & Sustainable Performance",
+      "base_scores": {
+        "theme": 92,
+        "capability": 90,
+        "role": 91,
+        "geography": 90
+      },
+      "source_urls": [
+        {
+          "url": "https://www.hintsa.com/",
+          "label": "Official homepage"
+        },
+        {
+          "url": "https://www.hintsa.com/company/",
+          "label": "Official company page"
+        },
+        {
+          "url": "https://hintsa-performance.jobs.personio.com/job/700832?language=en",
+          "label": "Official careers page noting Helsinki headquarters"
+        }
+      ],
+      "discovered_at": "2026-06-12T06:40:14+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    }
+  ]
+}
