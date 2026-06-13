@@ -1,0 +1,34 @@
+{
+  "entity_type": "company",
+  "entity_id": "Kyan Health",
+  "updated_at": "2026-06-12T12:30:00+00:00",
+  "contacts": [
+    {
+      "contact_id": "kyan-vlad-gheorghiu",
+      "name": "Vlad Gheorghiu",
+      "title": "CEO & Co-Founder",
+      "why_they_matter": "CEO and co-founder — workplace mental health strategy, AI companion Kai, and advisory conversations on product + clinical guardrails.",
+      "priority_score": 96,
+      "source_url": "https://ventures.swisscom.com/kyan-health-raises-16-7m-to-upgrade-workplace-wellness-with-ai-powered-preventative-care/",
+      "role_tags": ["founder", "ceo"]
+    },
+    {
+      "contact_id": "kyan-konstantin-struck",
+      "name": "Konstantin Struck",
+      "title": "Co-Founder",
+      "why_they_matter": "Co-founder with McKinsey background — organisational wellbeing programmes and enterprise rollout.",
+      "priority_score": 90,
+      "source_url": "https://www.kyanhealth.com/",
+      "role_tags": ["founder"]
+    },
+    {
+      "contact_id": "kyan-ignacio-leonhardt",
+      "name": "Ignacio Leonhardt",
+      "title": "Co-Founder",
+      "why_they_matter": "Serial entrepreneur co-founder — scaling global mental health product and partnerships.",
+      "priority_score": 88,
+      "source_url": "https://www.kyanhealth.com/",
+      "role_tags": ["founder"]
+    }
+  ]
+}

@@ -1,9 +1,10 @@
-import os
 import time
 from dataclasses import dataclass
 from typing import Any
 
 import requests
+
+from app_secrets import get_secret
 
 
 APOLLO_BASE_URL = "https://api.apollo.io/api/v1"
@@ -36,10 +37,10 @@ class ApolloClientError(Exception):
 
 
 def get_api_key() -> str:
-    key = os.environ.get("APOLLO_API_KEY", "").strip()
+    key = get_secret("APOLLO_API_KEY")
     if not key:
         raise ApolloClientError(
-            "APOLLO_API_KEY is not set. Export it locally or add it to Cursor Automation env."
+            "APOLLO_API_KEY is not set. Add it to .streamlit/secrets.toml or export it."
         )
     return key
 

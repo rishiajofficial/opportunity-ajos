@@ -116,6 +116,22 @@ APP_CSS = """
         font-size: 0.78rem;
         margin: 0 0 1rem;
     }
+    .main-nav-wrap {
+        background: #fff;
+        border: 1px solid #e4ebe6;
+        border-radius: 14px;
+        margin-bottom: 0.85rem;
+        padding: 0.45rem 0.5rem;
+        position: sticky;
+        top: 0.35rem;
+        z-index: 30;
+    }
+    .main-nav-wrap [data-testid="column"] button {
+        font-size: 0.78rem !important;
+        min-height: 2.35rem;
+        padding: 0.35rem 0.5rem !important;
+        white-space: normal;
+    }
     .queue-preview-item {
         color: #425049;
         font-size: 0.82rem;
@@ -526,6 +542,7 @@ def find_company_row(companies_df: pd.DataFrame, company_name: str) -> pd.Series
 
 
 FOCUS_STEPS = ("overview", "draft", "send")
+MAIN_VIEWS = ("review", "interested", "saved", "learning", "proposals", "settings")
 
 
 def init_session_view() -> None:
@@ -931,7 +948,7 @@ def render_action_details(
         with st.form(f"drafts-{action['action_id']}"):
             email_to = st.text_input("To (email)", value=email_draft.get("to", ""))
             email_subject = st.text_input("Subject", value=email_draft["subject"])
-            email_body = st.text_area("Email draft", value=email_draft["body"], height=160)
+            email_body = st.text_area("Email draft", value=email_draft["body"], height=320)
             linkedin_body = st.text_area(
                 "LinkedIn draft",
                 value=action["drafts"]["linkedin"]["body"],
@@ -1102,8 +1119,12 @@ def render_dev_proposals(proposals: dict) -> None:
                 st.rerun()
 
 
-def render_dev_feedback_panel() -> None:
-    with st.expander("Dev feedback", expanded=False):
+def render_dev_feedback_panel(*, use_expander: bool = True) -> None:
+    if use_expander:
+        with st.expander("Dev feedback", expanded=False):
+            _render_dev_feedback_form()
+    else:
+        st.markdown("#### Dev feedback")
         _render_dev_feedback_form()
 
 
@@ -1132,7 +1153,7 @@ def _render_dev_feedback_form() -> None:
         st.caption(f"{len(queued)} item(s) queued for dev agent.")
 
 
-def render_learn_tab(learning_state: dict, questions: list[dict]) -> None:
+def render_learning_questions(learning_state: dict, questions: list[dict]) -> None:
     open_questions = get_open_questions(learning_state, questions)
     if open_questions:
         question = open_questions[0]
@@ -1154,23 +1175,53 @@ def render_learn_tab(learning_state: dict, questions: list[dict]) -> None:
                 form_key_suffix="-reopen",
             )
 
+
+def render_learning_screen(learning_state: dict, questions: list[dict]) -> None:
+    st.markdown("### Learning")
+    st.caption("One question at a time — answers shape scoring and recommendations.")
+    render_learning_questions(learning_state, questions)
+
     insights = generate_insights(learning_state, questions)
+    st.markdown("#### What AJOS learned")
+    render_list(insights["learned"], "Nothing learned yet.")
+    st.markdown("#### Hypotheses")
+    render_list(insights["hypotheses"], "No hypotheses yet.")
+    if insights["positive_signals"]:
+        st.markdown("#### Positive signals")
+        render_list(insights["positive_signals"], "")
+    if insights["negative_signals"]:
+        st.markdown("#### Negative signals")
+        render_list(insights["negative_signals"], "")
+    if insights["open_questions"]:
+        st.markdown("#### Still open")
+        render_list(insights["open_questions"], "All core questions answered.")
+
+
+def render_proposals_screen(learning_state: dict, questions: list[dict]) -> None:
     proposals = generate_proposals(learning_state, questions)
-    with st.expander("Dev proposals", expanded=bool(proposals.get("dev_proposals"))):
-        render_dev_proposals(proposals)
-    with st.expander("What AJOS learned", expanded=False):
-        render_list(insights["learned"], "Nothing learned yet.")
-        render_list(insights["hypotheses"], "No hypotheses yet.")
-    with st.expander("Future ideas", expanded=False):
-        for key, label in {
-            "opportunity_source_suggestions": "New sources",
-            "scoring_suggestions": "Scoring",
-            "roadmap_suggestions": "Roadmap",
-            "feature_suggestions": "Features",
-            "content_suggestions": "Copy to refine",
-        }.items():
-            st.markdown(f"**{label}**")
-            render_list(proposals.get(key, []), "Nothing yet.")
+    st.markdown("### Proposals")
+    st.caption(proposals.get("notice", ""))
+
+    st.markdown("#### Dev proposals")
+    render_dev_proposals(proposals)
+
+    st.markdown("#### Future ideas")
+    for key, label in {
+        "opportunity_source_suggestions": "New sources",
+        "scoring_suggestions": "Scoring",
+        "roadmap_suggestions": "Roadmap",
+        "feature_suggestions": "Features",
+        "content_suggestions": "Copy to refine",
+    }.items():
+        st.markdown(f"**{label}**")
+        render_list(proposals.get(key, []), "Nothing yet.")
+
+
+def render_settings_screen() -> None:
+    st.markdown("### Settings")
+    st.caption("Discovery, agents, and product feedback — always here in the main view.")
+    render_discovery_panel(use_expander=False)
+    render_dev_feedback_panel(use_expander=False)
 
 
 def render_list(items: list[str], empty_message: str) -> None:
@@ -1323,6 +1374,41 @@ def switch_view(view: str) -> None:
     st.rerun()
 
 
+def render_main_nav(
+    current: str,
+    *,
+    queue_len: int,
+    saved_count: int,
+    interested_count: int,
+    pending_dev_proposals: int = 0,
+) -> None:
+    st.markdown('<div class="main-nav-wrap">', unsafe_allow_html=True)
+    cols = st.columns(len(MAIN_VIEWS))
+    labels = {
+        "review": f"Review ({queue_len})",
+        "interested": f"Interested ({interested_count})",
+        "saved": f"Saved ({saved_count})",
+        "learning": "Learning",
+        "proposals": (
+            f"Proposals ({pending_dev_proposals})"
+            if pending_dev_proposals
+            else "Proposals"
+        ),
+        "settings": "Settings",
+    }
+    for col, view_key in zip(cols, MAIN_VIEWS):
+        with col:
+            if st.button(
+                labels[view_key],
+                key=f"main-nav-{view_key}",
+                use_container_width=True,
+                type="primary" if current == view_key else "secondary",
+            ):
+                if current != view_key:
+                    switch_view(view_key)
+    st.markdown("</div>", unsafe_allow_html=True)
+
+
 def leave_focus_view() -> None:
     return_view = st.session_state.get("ajos_focus_return_view", "review")
     switch_view(return_view)
@@ -1382,15 +1468,13 @@ def render_sidebar_dashboard(
     queue: list[dict],
     saved_count: int,
     interested_count: int,
-    learning_state: dict,
-    learning_questions: list[dict],
     selected_geographies: list[str],
     selected_themes: list[str],
 ) -> tuple[list[str], list[str]]:
     with st.sidebar:
         st.markdown('<p class="sidebar-brand">AJOS</p>', unsafe_allow_html=True)
         st.markdown(
-            '<p class="sidebar-tagline">Opportunity Engine</p>',
+            '<p class="sidebar-tagline">Filters & queue</p>',
             unsafe_allow_html=True,
         )
 
@@ -1400,22 +1484,10 @@ def render_sidebar_dashboard(
             if st.button("← Back to queue", key="sidebar-focus-back", use_container_width=True):
                 leave_focus_view()
         else:
-            nav = st.radio(
-                "View",
-                options=["review", "interested", "saved"],
-                format_func=lambda key: {
-                    "review": f"Review queue ({len(queue)})",
-                    "interested": f"Interested ({interested_count})",
-                    "saved": f"Saved ({saved_count})",
-                }[key],
-                index=["review", "interested", "saved"].index(view)
-                if view in {"review", "interested", "saved"}
-                else 0,
-                key="sidebar-nav",
-                label_visibility="collapsed",
+            st.caption(
+                "Learning, Proposals, Settings — top tabs in main view "
+                "(sidebar collapse safe)."
             )
-            if nav != view:
-                switch_view(nav)
 
         st.markdown("---")
         m1, m2, m3 = st.columns(3)
@@ -1450,14 +1522,6 @@ def render_sidebar_dashboard(
             key="sidebar-themes",
         )
 
-        render_discovery_panel(in_sidebar=True)
-
-        with st.expander("Dev feedback", expanded=False):
-            _render_dev_feedback_form()
-
-        with st.expander("AJOS learning", expanded=False):
-            render_learn_tab(learning_state, learning_questions)
-
         render_discovery_footer()
 
     return selected_geographies, selected_themes
@@ -1467,7 +1531,7 @@ def _lines_to_list(text: str) -> list[str]:
     return [line.strip() for line in text.splitlines() if line.strip()]
 
 
-def render_discovery_panel(*, in_sidebar: bool = False) -> None:
+def render_discovery_panel(*, use_expander: bool = True) -> None:
     config = load_config()
     country_options = sorted(
         set(TARGET_GEOGRAPHIES) | set(config.get("active_countries", []))
@@ -1476,7 +1540,7 @@ def render_discovery_panel(*, in_sidebar: bool = False) -> None:
         set(DISCOVERY_THEME_OPTIONS) | set(config.get("active_themes", []))
     )
 
-    with st.expander("Discovery", expanded=False):
+    def _discovery_form() -> None:
         status = "on" if config["enabled"] else "paused"
         st.caption(
             f"Cloud agent searches from `data/discovery/config.json` · status: **{status}**"
@@ -1567,8 +1631,12 @@ def render_discovery_panel(*, in_sidebar: bool = False) -> None:
             )
             st.rerun()
 
-    if not in_sidebar:
-        render_dev_feedback_panel()
+    if use_expander:
+        with st.expander("Discovery", expanded=False):
+            _discovery_form()
+    else:
+        st.markdown("#### Discovery")
+        _discovery_form()
 
 
 def render_discovery_footer() -> None:
@@ -1642,7 +1710,7 @@ def render_review_screen(
             st.caption("Open Saved to revisit bookmarked opportunities.")
         if interested_count:
             st.caption("Open Interested to continue with liked opportunities.")
-        st.caption("Open the menu (☰) for filters, discovery, and learning.")
+        st.caption("Use the top tabs for Learning, Proposals, or Settings.")
         return
 
     current_item = queue[0]
@@ -1758,12 +1826,12 @@ def render_focus_draft_step(company: pd.Series, action: dict) -> None:
     with st.form(f"focus-draft-{action['action_id']}"):
         email_to = st.text_input("To (email)", value=email_draft.get("to", ""))
         email_subject = st.text_input("Subject", value=email_draft["subject"])
-        email_body = st.text_area("Message", value=email_draft["body"], height=150)
+        email_body = st.text_area("Message", value=email_draft["body"], height=360)
         with st.expander("LinkedIn draft"):
             linkedin_body = st.text_area(
                 "LinkedIn",
                 value=action["drafts"]["linkedin"]["body"],
-                height=90,
+                height=140,
                 label_visibility="collapsed",
             )
         if st.form_submit_button("Save & continue →", use_container_width=True, type="primary"):
@@ -1882,7 +1950,7 @@ st.set_page_config(
     page_title="AJOS",
     page_icon="✦",
     layout="wide",
-    initial_sidebar_state="auto",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown(APP_CSS, unsafe_allow_html=True)
@@ -1933,10 +2001,11 @@ selected_geographies, selected_themes = render_sidebar_dashboard(
     queue=queue_for_sidebar,
     saved_count=len(saved_for_sidebar),
     interested_count=len(interested_for_sidebar),
-    learning_state=learning_state,
-    learning_questions=learning_questions,
     selected_geographies=st.session_state.sidebar_geographies,
     selected_themes=st.session_state.sidebar_themes,
+)
+pending_dev_proposals = len(
+    generate_proposals(learning_state, learning_questions).get("dev_proposals", [])
 )
 st.session_state.sidebar_geographies = selected_geographies
 st.session_state.sidebar_themes = selected_themes
@@ -1954,7 +2023,26 @@ company_dicts = companies_as_dicts(filtered)
 view = st.session_state.ajos_view
 focus_company = st.session_state.ajos_focus_company
 
-if view == "saved":
+nav_view = (
+    view
+    if view in MAIN_VIEWS
+    else st.session_state.get("ajos_focus_return_view", "review")
+)
+render_main_nav(
+    nav_view,
+    queue_len=len(queue_for_sidebar),
+    saved_count=len(saved_for_sidebar),
+    interested_count=len(interested_for_sidebar),
+    pending_dev_proposals=pending_dev_proposals,
+)
+
+if view == "learning":
+    render_learning_screen(learning_state, learning_questions)
+elif view == "proposals":
+    render_proposals_screen(learning_state, learning_questions)
+elif view == "settings":
+    render_settings_screen()
+elif view == "saved":
     render_company_picker(
         get_saved_companies(company_dicts, learning_state),
         filtered,

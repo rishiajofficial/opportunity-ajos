@@ -4,12 +4,13 @@ from __future__ import annotations
 
 import json
 import logging
-import os
 import re
 from pathlib import Path
 from typing import Any, Literal
 
 from openai import OpenAI
+
+from app_secrets import get_secret
 
 PROFILE_PATH = Path(__file__).parent / "data" / "ankit_profile.json"
 OPENAI_MODEL = "gpt-4o-mini"
@@ -27,32 +28,12 @@ class LLMChatError(Exception):
     """Raised when the LLM call fails."""
 
 
-def _get_secret(name: str) -> str:
-    # Streamlit Cloud injects root-level secrets as env vars too.
-    env_value = os.environ.get(name, "").strip()
-    if env_value:
-        return env_value
-    try:
-        import streamlit as st
-
-        try:
-            return str(st.secrets[name]).strip()
-        except (KeyError, TypeError):
-            pass
-        attr = getattr(st.secrets, name, None)
-        if attr is not None and not callable(attr):
-            return str(attr).strip()
-    except Exception:
-        pass
-    return ""
-
-
 def get_anthropic_api_key() -> str:
-    return _get_secret("ANTHROPIC_API_KEY")
+    return get_secret("ANTHROPIC_API_KEY")
 
 
 def get_openai_api_key() -> str:
-    return _get_secret("OPENAI_API_KEY")
+    return get_secret("OPENAI_API_KEY")
 
 
 def get_active_provider() -> Provider | None:
@@ -297,7 +278,7 @@ def parse_bullets(text: str, *, max_bullets: int = MAX_BULLETS) -> list[str]:
 
 
 def _anthropic_model() -> str:
-    return _get_secret("ANTHROPIC_MODEL") or ANTHROPIC_MODEL
+    return get_secret("ANTHROPIC_MODEL") or ANTHROPIC_MODEL
 
 
 def _call_anthropic(
