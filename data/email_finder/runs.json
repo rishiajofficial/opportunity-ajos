@@ -69,6 +69,16 @@
       "errors": [
         "RemotePass: no contacts file"
       ]
+    },
+    {
+      "timestamp": "2026-06-13T04:01:57+00:00",
+      "processed": 2,
+      "emails_found": 0,
+      "credits_used": 0,
+      "dry_run": false,
+      "errors": [
+        "RemotePass: no contacts file"
+      ]
     }
   ]
 }
