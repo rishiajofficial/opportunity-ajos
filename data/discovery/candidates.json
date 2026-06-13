@@ -110,6 +110,129 @@
       "discovered_at": "2026-06-11T15:45:20+00:00",
       "status": "pending",
       "discovery_run_id": ""
+    },
+    {
+      "candidate_id": "quan",
+      "name": "Quan",
+      "country": "Netherlands",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://www.quanwellbeing.com/",
+      "one_liner": "The Hague employee well-being platform that helps teams measure burnout risk, run well-being retros, and build healthier work rituals.",
+      "why_ankit_fits": [
+        "Workplace wellbeing plus team systems: Quan turns hidden stressors into structured team conversations and practical rituals.",
+        "Ankit's product strategy, facilitation, and AI workflow strengths fit the gap between measurement, behavior change, and HR adoption."
+      ],
+      "problems_to_solve": [
+        "Translate well-being index data into manager actions that teams actually sustain.",
+        "Position wellbeing as human potential and performance infrastructure, not a perk or survey.",
+        "Explore responsible AI assistance for pattern recognition while preserving privacy and psychological safety."
+      ],
+      "suggested_role": "Human Potential Product Strategy Advisor",
+      "base_scores": {
+        "theme": 94,
+        "capability": 92,
+        "role": 91,
+        "geography": 92
+      },
+      "source_urls": [
+        {
+          "url": "https://www.quanwellbeing.com/",
+          "label": "Quan homepage"
+        },
+        {
+          "url": "https://www.jointruetribe.com/library/hr-tech-company-truetribe-acquires-employee-wellbeing-platform-quan",
+          "label": "TrueTribe acquisition and product context"
+        },
+        {
+          "url": "https://pmc.ncbi.nlm.nih.gov/articles/PMC12374142/",
+          "label": "Quan Well-Being Index validation paper"
+        }
+      ],
+      "discovered_at": "2026-06-13T07:32:04+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    },
+    {
+      "candidate_id": "kuullas",
+      "name": "Kuullas",
+      "country": "Finland",
+      "theme": "Human Potential",
+      "website": "https://www.kuullas.com/en/homepage",
+      "one_liner": "Finnish proactive mental coaching platform that matches employees with mental wellbeing professionals for confidential remote coaching.",
+      "why_ankit_fits": [
+        "Strong human-potential framing: Kuullas develops mental capabilities like prioritization, focus, self-awareness, and emotional flexibility.",
+        "Ankit can connect coaching, learning design, AI matchmaking, and HR insights into a clearer opportunity-creation narrative."
+      ],
+      "problems_to_solve": [
+        "Scale AI-assisted coach matching while keeping the service personal, safe, and non-clinical.",
+        "Turn anonymized coaching feedback into useful team-level learning without violating trust.",
+        "Package mental capability development as a future-of-work system for high-pressure teams."
+      ],
+      "suggested_role": "Human Potential Venture Advisor",
+      "base_scores": {
+        "theme": 92,
+        "capability": 91,
+        "role": 90,
+        "geography": 90
+      },
+      "source_urls": [
+        {
+          "url": "https://www.kuullas.com/en/homepage",
+          "label": "Kuullas homepage"
+        },
+        {
+          "url": "https://www.i3-inshape.eu/services/kuullas-finland-oy/",
+          "label": "INSHAPE profile verifying Finnish startup and AI matching"
+        },
+        {
+          "url": "https://softlandia.com/articles/kuullas",
+          "label": "Softlandia case study on Kuullas AI matchmaking"
+        }
+      ],
+      "discovered_at": "2026-06-13T07:32:19+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
+    },
+    {
+      "candidate_id": "ephoria",
+      "name": "ephoria",
+      "country": "Switzerland",
+      "theme": "Wellness & Mental Wellbeing",
+      "website": "https://ephoria.health/en/",
+      "one_liner": "Swiss AI-supported mental health coach and workplace health portal with anonymized real-time insights for organizations.",
+      "why_ankit_fits": [
+        "Direct overlap with responsible AI, coaching, workplace wellbeing, and measurable behavior change.",
+        "Ankit can help frame ephoria beyond a mental health app into a human-potential operating layer for teams and leaders."
+      ],
+      "problems_to_solve": [
+        "Design trustworthy AI coaching journeys that complement, not replace, human and clinical support.",
+        "Convert anonymized workplace signals into practical interventions for HR and managers.",
+        "Build product narratives around psychological safety, resilience, and measurable human development."
+      ],
+      "suggested_role": "Responsible AI & Workplace Wellbeing Advisor",
+      "base_scores": {
+        "theme": 94,
+        "capability": 93,
+        "role": 92,
+        "geography": 91
+      },
+      "source_urls": [
+        {
+          "url": "https://ephoria.health/en/",
+          "label": "ephoria homepage"
+        },
+        {
+          "url": "https://ephoria.health/en/workplace-health-promotion",
+          "label": "ephoria workplace health promotion page"
+        },
+        {
+          "url": "https://www.prevention.ch/project/ephoria-mental-health-coach-in-der-hosentasche",
+          "label": "prevention.ch profile linking ephoria to ZHAW and workplace mental health"
+        }
+      ],
+      "discovered_at": "2026-06-13T07:32:32+00:00",
+      "status": "pending",
+      "discovery_run_id": ""
     }
   ]
 }
