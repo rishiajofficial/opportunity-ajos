@@ -1,3 +1,16 @@
 {
-  "items": []
+  "items": [
+    {
+      "item_id": "frontify",
+      "company": "Frontify",
+      "country": "Switzerland",
+      "theme": "Creator Economy",
+      "reason": "Optional content refresh: English/generic copy sharpened for Roman Hinglish review.",
+      "source": "content_agent",
+      "status": "refined",
+      "queued_at": "2026-06-13T06:03:57+00:00",
+      "updated_at": "2026-06-13T06:03:57+00:00",
+      "refined_at": "2026-06-13T06:03:57+00:00"
+    }
+  ]
 }
