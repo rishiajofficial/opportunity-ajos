@@ -15,7 +15,22 @@
         "Pehle is opportunity ko like kiya tha.",
         "Confidence: 62/100."
       ],
-      "target_contact": null,
+      "target_contact": {
+        "contact_id": "remotepass-kamal-reggad",
+        "name": "Kamal Reggad",
+        "title": "CEO",
+        "why_they_matter": "CEO \u2014 key decision-maker at RemotePass; outreach on product, partnerships, or advisory fit.",
+        "priority_score": 99,
+        "source_url": "https://www.remotepass.com",
+        "role_tags": [
+          "founder",
+          "ceo"
+        ],
+        "email": "kamal@remotepass.com",
+        "email_status": "valid",
+        "email_source": "hunter",
+        "email_source_url": "https://www.linkedin.com/in/kamalreggad"
+      },
       "theme": "Future of Work",
       "country": "UAE",
       "suggested_role": "Future of Work Entrepreneur in Residence",
@@ -29,18 +44,18 @@
       ],
       "drafts": {
         "email": {
-          "to": "",
-          "subject": "Opportunity to explore Future of Work Entrepreneur in Residence with RemotePass",
-          "body": "Namaste,\n\nMain RemotePass ka kaam Future of Work space mein follow kar raha hoon \u2014 saath mein value create karne ka meaningful chance lagta hai.\n\nEk short conversation welcome karunga \u2014 future of work entrepreneur in residence collaboration se RemotePass ke liye value kaise ban sakti hai.\n\nMera background systems thinking, product strategy, ai transformation, innovation cover karta hai \u2014 founder-led environments mein ideas, products, aur systems connect karna pasand hai.\n\nKya ek short conversation possible ho sakti hai?\n\nBest,\nAnkit",
-          "updated_at": "2026-06-11T15:08:14+00:00"
+          "to": "kamal@remotepass.com",
+          "subject": "Kamal Reggad \u2014 opportunity to explore Future of Work Entrepreneur in Residence with RemotePass",
+          "body": "Hello Kamal Reggad,\n\nI have been following RemotePass's work in Future of Work and see a thoughtful opportunity to create value together.\n\nI would welcome a brief conversation about how a future of work entrepreneur in residence collaboration could create meaningful value for RemotePass.\n\nMy background spans systems thinking, product strategy, ai transformation, innovation, and I am especially drawn to founder-led environments where ideas, products, and systems can be woven together with clarity and pace.\n\nWould you be open to a short conversation?\n\nWarm regards,\nAnkit",
+          "updated_at": "2026-06-13T11:50:47+00:00"
         },
         "linkedin": {
-          "body": "Namaste, Main RemotePass ka kaam Future of Work space mein follow kar raha hoon \u2014 saath mein value create karne ka meaningful chance lagta hai. Ek short conversation welcome karunga \u2014 future of work entrepreneur in residence collaboration se RemotePass ke liye value kaise ban sakti hai.",
-          "updated_at": "2026-06-11T15:08:14+00:00"
+          "body": "Hello Kamal Reggad, I have been following RemotePass's work in Future of Work and see a thoughtful opportunity to create value together. I would welcome a brief conversation about how a future of work entrepreneur in residence collaboration could create meaningful value for RemotePass.",
+          "updated_at": "2026-06-13T11:50:47+00:00"
         }
       },
       "generated_at": "2026-06-11T15:08:14+00:00",
-      "updated_at": "2026-06-11T15:08:14+00:00"
+      "updated_at": "2026-06-13T11:50:47+00:00"
     }
   ]
 }

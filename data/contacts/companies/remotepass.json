@@ -1,0 +1,88 @@
+{
+  "entity_type": "company",
+  "entity_id": "RemotePass",
+  "contacts": [
+    {
+      "contact_id": "remotepass-kamal-reggad",
+      "name": "Kamal Reggad",
+      "title": "CEO",
+      "why_they_matter": "CEO \u2014 key decision-maker at RemotePass; outreach on product, partnerships, or advisory fit.",
+      "priority_score": 99,
+      "source_url": "https://www.remotepass.com",
+      "role_tags": [
+        "founder",
+        "ceo"
+      ],
+      "email": "kamal@remotepass.com",
+      "email_status": "valid",
+      "email_source": "hunter",
+      "email_source_url": "https://www.linkedin.com/in/kamalreggad",
+      "email_found_at": "2026-06-13T11:50:47+00:00"
+    },
+    {
+      "contact_id": "remotepass-omar-kettan",
+      "name": "Omar Kettan",
+      "title": "Business Development Manager",
+      "why_they_matter": "Business Development Manager \u2014 key decision-maker at RemotePass; outreach on product, partnerships, or advisory fit.",
+      "priority_score": 80,
+      "source_url": "https://www.remotepass.com",
+      "role_tags": [
+        "head_of_product"
+      ],
+      "email": "omar@remotepass.com",
+      "email_status": "valid",
+      "email_source": "hunter",
+      "email_source_url": "https://www.linkedin.com/in/omar-kettan",
+      "email_found_at": "2026-06-13T11:50:47+00:00"
+    },
+    {
+      "contact_id": "remotepass-sameer-b",
+      "name": "Sameer B",
+      "title": "Customer Success Manager",
+      "why_they_matter": "Customer Success Manager \u2014 key decision-maker at RemotePass; outreach on product, partnerships, or advisory fit.",
+      "priority_score": 80,
+      "source_url": "https://www.remotepass.com",
+      "role_tags": [
+        "head_of_product"
+      ],
+      "email": "sameer@remotepass.com",
+      "email_status": "unknown",
+      "email_source": "hunter",
+      "email_source_url": "https://www.linkedin.com/in/sameer-b-b53b25200",
+      "email_found_at": "2026-06-13T11:50:47+00:00"
+    },
+    {
+      "contact_id": "remotepass-roman-stelmakh",
+      "name": "Roman Stelmakh",
+      "title": "Director of Engineering",
+      "why_they_matter": "Director of Engineering \u2014 key decision-maker at RemotePass; outreach on product, partnerships, or advisory fit.",
+      "priority_score": 80,
+      "source_url": "https://www.remotepass.com",
+      "role_tags": [
+        "head_of_product"
+      ],
+      "email": "roman@remotepass.com",
+      "email_status": "valid",
+      "email_source": "hunter",
+      "email_source_url": "https://www.linkedin.com/in/romanstelmakh",
+      "email_found_at": "2026-06-13T11:50:47+00:00"
+    },
+    {
+      "contact_id": "remotepass-souha-hamraoui",
+      "name": "Souha Hamraoui",
+      "title": "Customer Success Director",
+      "why_they_matter": "Customer Success Director \u2014 key decision-maker at RemotePass; outreach on product, partnerships, or advisory fit.",
+      "priority_score": 80,
+      "source_url": "https://www.remotepass.com",
+      "role_tags": [
+        "head_of_product"
+      ],
+      "email": "souha@remotepass.com",
+      "email_status": "valid",
+      "email_source": "hunter",
+      "email_source_url": "https://www.linkedin.com/in/souhaelhamraoui",
+      "email_found_at": "2026-06-13T11:50:47+00:00"
+    }
+  ],
+  "updated_at": "2026-06-13T11:50:47+00:00"
+}
