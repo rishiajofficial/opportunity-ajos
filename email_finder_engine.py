@@ -11,6 +11,8 @@ from apollo_client import ApolloClientError, ApolloResult, match_by_id, match_pe
 from company_intelligence import save_json
 from contact_discovery import load_company_contacts, save_company_contacts, validate_entity
 from discovery_engine import website_host
+from hunter_client import HunterClientError, HunterResult, domain_search as hunter_domain_search
+from hunter_client import email_finder as hunter_email_finder
 from learning import get_interested_companies, load_state
 
 
@@ -52,7 +54,7 @@ def load_json(path: Path, default: Any) -> Any:
 def default_config() -> dict[str, Any]:
     return {
         "enabled": True,
-        "provider": "apollo",
+        "provider": "hunter",
         "max_companies_per_run": 3,
         "max_contacts_per_company": 2,
         "require_verified_email": False,
@@ -75,8 +77,8 @@ def validate_config(config: dict[str, Any]) -> None:
     for field in required:
         if field not in config:
             raise ValueError(f"Email finder config missing required field: {field}")
-    if config["provider"] != "apollo":
-        raise ValueError("Only provider 'apollo' is supported in V1.")
+    if config["provider"] not in ("apollo", "hunter"):
+        raise ValueError("config.provider must be 'apollo' or 'hunter'.")
     for int_field in ("max_companies_per_run", "max_contacts_per_company", "max_credits_per_run"):
         value = config[int_field]
         if not isinstance(value, int) or value < 0 or value > 25:
@@ -144,12 +146,13 @@ def is_generic_email(email: str, *, allow_generic: bool) -> bool:
     return any(lowered.startswith(prefix) for prefix in GENERIC_EMAIL_PREFIXES)
 
 
-def accept_result(result: ApolloResult, config: dict[str, Any]) -> bool:
+def accept_result(result: ApolloResult | HunterResult, config: dict[str, Any]) -> bool:
     if not result.email:
         return False
-    if result.email_status == "unavailable":
+    status = (result.email_status or "").lower()
+    if status in ("unavailable", "invalid"):
         return False
-    if config["require_verified_email"] and result.email_status != "verified":
+    if config["require_verified_email"] and status not in ("verified", "valid"):
         return False
     if is_generic_email(result.email, allow_generic=config["allow_generic_emails"]):
         return False
@@ -187,7 +190,31 @@ def find_via_search(
     return None
 
 
-def find_email_for_contact(
+def find_via_hunter_search(
+    *,
+    contact: dict[str, Any],
+    domain: str,
+) -> HunterResult | None:
+    titles = titles_for_contact(contact)
+    candidates = hunter_domain_search(domain=domain, limit=10)
+    if titles:
+        title_keys = {title.lower() for title in titles}
+        filtered = [
+            item
+            for item in candidates
+            if item.title and any(key in item.title.lower() for key in title_keys)
+        ]
+        if filtered:
+            candidates = filtered
+    for candidate in candidates:
+        if names_match(contact["name"], candidate.first_name, candidate.last_name):
+            return candidate
+    if len(candidates) == 1:
+        return candidates[0]
+    return None
+
+
+def find_email_for_contact_apollo(
     *,
     contact: dict[str, Any],
     company_name: str,
@@ -221,10 +248,64 @@ def find_email_for_contact(
     return None, f"No acceptable email found for {contact['name']}"
 
 
-def apply_email_to_contact(contact: dict[str, Any], result: ApolloResult) -> None:
+def find_email_for_contact_hunter(
+    *,
+    contact: dict[str, Any],
+    domain: str,
+    config: dict[str, Any],
+) -> tuple[HunterResult | None, str | None]:
+    parsed = split_name(contact["name"])
+    result: HunterResult | None = None
+    if parsed:
+        first_name, last_name = parsed
+        try:
+            result = hunter_email_finder(
+                first_name=first_name,
+                last_name=last_name,
+                domain=domain,
+            )
+        except HunterClientError as error:
+            return None, str(error)
+        if accept_result(result, config):
+            return result, None
+
+    try:
+        fallback = find_via_hunter_search(contact=contact, domain=domain)
+    except HunterClientError as error:
+        return None, str(error)
+    if fallback and accept_result(fallback, config):
+        return fallback, None
+    if result and result.email and not accept_result(result, config):
+        return None, f"Rejected email for {contact['name']}: status={result.email_status}"
+    return None, f"No acceptable email found for {contact['name']}"
+
+
+def find_email_for_contact(
+    *,
+    contact: dict[str, Any],
+    company_name: str,
+    domain: str,
+    config: dict[str, Any],
+) -> tuple[ApolloResult | HunterResult | None, str | None]:
+    if config["provider"] == "hunter":
+        return find_email_for_contact_hunter(contact=contact, domain=domain, config=config)
+    return find_email_for_contact_apollo(
+        contact=contact,
+        company_name=company_name,
+        domain=domain,
+        config=config,
+    )
+
+
+def apply_email_to_contact(
+    contact: dict[str, Any],
+    result: ApolloResult | HunterResult,
+    *,
+    provider: str,
+) -> None:
     contact["email"] = result.email
     contact["email_status"] = result.email_status or "unknown"
-    contact["email_source"] = "apollo"
+    contact["email_source"] = provider
     contact["email_source_url"] = result.linkedin_url or contact.get("source_url", "")
     contact["email_found_at"] = now_iso()
 
@@ -367,7 +448,7 @@ def run_email_finder(
                     domain=domain,
                     config=config,
                 )
-            except ApolloClientError as error:
+            except (ApolloClientError, HunterClientError) as error:
                 summary["errors"].append(f"{company_name}/{contact['contact_id']}: {error}")
                 break
 
@@ -389,7 +470,7 @@ def run_email_finder(
                 summary["emails_found"] += 1
                 continue
 
-            apply_email_to_contact(contact, result)
+            apply_email_to_contact(contact, result, provider=config["provider"])
             company_result["contacts_updated"].append(
                 {
                     "contact_id": contact["contact_id"],
@@ -441,7 +522,7 @@ def main() -> None:
     subparsers.add_parser("show-config", help="Print email finder config JSON")
     subparsers.add_parser("list-queue", help="List interested companies missing emails")
 
-    run_parser = subparsers.add_parser("run", help="Find emails via Apollo API")
+    run_parser = subparsers.add_parser("run", help="Find emails via configured provider (hunter or apollo)")
     run_parser.add_argument("--max", type=int, default=None, help="Max companies this run")
     run_parser.add_argument("--dry-run", action="store_true", help="Call API but do not write JSON")
     run_parser.add_argument("--force", action="store_true", help="Overwrite existing contact emails")

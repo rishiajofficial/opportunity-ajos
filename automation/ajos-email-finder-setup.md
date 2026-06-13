@@ -6,8 +6,8 @@ Quick checklist when creating or fixing the automation in the Cursor UI.
 - [ ] Trigger: Cron `0 10,22 * * *` (twice daily, after discovery)
 - [ ] **Repository:** `rishiajofficial/opportunity-ajos` / branch **`main`** ← required; without this the agent sees an empty `/agent` folder
 - [ ] **Git:** allow commit + push to `main`
-- [ ] **APOLLO_API_KEY in Cursor (not Streamlit):** [cursor.com/dashboard](https://cursor.com/dashboard) → **Cloud Agents** or **Settings** → **Secrets** → add name `APOLLO_API_KEY`, value = Apollo API key. Streamlit `secrets.toml` does **not** reach cloud automations.
-- [ ] If your automation has its own **Environment variables** field, set the same `APOLLO_API_KEY` there too.
+- [ ] **HUNTER_API_KEY in Cursor Secrets** — [hunter.io/api-keys](https://hunter.io/api-keys); free plan works (50 credits/month). Set `data/email_finder/config.json` → `"provider": "hunter"` (default).
+- [ ] Or **APOLLO_API_KEY** if using Apollo provider
 - [ ] Cloud Agents: enabled in dashboard
 - [ ] Prompt: copy from [`CLOUD_EMAIL_FINDER_AUTOMATION.md`](../CLOUD_EMAIL_FINDER_AUTOMATION.md) → Agent instructions block (includes repo + API key checks)
 - [ ] Enable automation

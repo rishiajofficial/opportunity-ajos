@@ -1,0 +1,9 @@
+{
+  "enabled": true,
+  "provider": "hunter",
+  "max_companies_per_run": 2,
+  "max_contacts_per_company": 5,
+  "max_credits_per_run": 15,
+  "allow_generic_emails": false,
+  "updated_at": "2026-06-12T16:00:00+00:00"
+}

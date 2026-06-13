@@ -1,6 +1,6 @@
 {
   "enabled": true,
-  "provider": "apollo",
+  "provider": "hunter",
   "max_companies_per_run": 3,
   "max_contacts_per_company": 2,
   "require_verified_email": false,

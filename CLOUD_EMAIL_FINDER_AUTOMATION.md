@@ -1,6 +1,6 @@
 # AJOS Cloud Email Finder Automation
 
-Scheduled email enrichment for **Interested** companies via **Cursor Cloud Automation** and the Apollo.io API.
+Scheduled email enrichment for **Interested** companies via **Cursor Cloud Automation** and Hunter.io (default) or Apollo.io API.
 
 ## One-time setup (Cursor dashboard)
 
@@ -12,16 +12,16 @@ Scheduled email enrichment for **Interested** companies via **Cursor Cloud Autom
 | --- | --- |
 | **Name** | `AJOS Email Finder` |
 | **Description** | Find emails for Interested companies via Apollo API |
-| **Trigger** | Cron: `0 10,22 * * *` (10:00 and 22:00 UTC daily) — after discovery runs |
+| **Trigger** | Cron: `0 10,22 * * *` (10:00 and 22:00 UTC daily) — after contact discovery |
 | **Repository** | `rishiajofficial/opportunity-ajos` |
 | **Branch** | `main` |
 | **Tools** | Git commit + push enabled |
 
-4. Add **`APOLLO_API_KEY`** in **Cursor**, not in the git repo. **Never commit this key.**
-   - **Primary (recommended):** [cursor.com/dashboard](https://cursor.com/dashboard) → **Cloud Agents** / **Settings** → **Secrets** → add `APOLLO_API_KEY` = your Apollo API key (from apollo.io → Settings → API keys).
-   - **Also check:** automation editor → **Environment variables** (if shown) → same name/value.
-   - **Does not work:** Streamlit Cloud secrets, `.streamlit/secrets.toml`, or `.env` in the repo — cloud agents do not read those unless you copy values into Cursor Secrets.
-   - Without Cursor Secrets, the agent correctly stops with `APOLLO_MISSING` and records `processed=0` (as in your run).
+4. Add API key in **Cursor Secrets** (never commit):
+   - **Hunter (recommended):** `HUNTER_API_KEY` from [hunter.io/api-keys](https://hunter.io/api-keys) — free plan includes 50 credits/month + API.
+   - **Apollo (optional):** `APOLLO_API_KEY` — set `data/email_finder/config.json` → `"provider": "apollo"`.
+   - **Primary:** [cursor.com/dashboard](https://cursor.com/dashboard) → **Cloud Agents** / **Settings** → **Secrets**.
+   - Streamlit `secrets.toml` does **not** reach cloud automations unless values are copied to Cursor Secrets.
 5. Paste the **Agent instructions** below into the automation prompt field.
 6. Save and enable the automation.
 
@@ -35,7 +35,8 @@ You are the AJOS email finder agent. Follow EMAIL_FINDER_AGENT.md and this runbo
 ## Verify environment (do this first)
 1. You must be in the cloned repo root — run `pwd && ls EMAIL_FINDER_AGENT.md email_finder_engine.py`
 2. If files are missing, STOP: the automation Repository must be `rishiajofficial/opportunity-ajos` branch `main` with Git commit+push enabled. Do not use gh auth or guess paths under /agent.
-3. Run `test -n "$APOLLO_API_KEY" && echo APOLLO_OK || echo APOLLO_MISSING` — if APOLLO_MISSING, STOP and report that APOLLO_API_KEY env var is not set on this automation.
+3. Run `test -n "$HUNTER_API_KEY" && echo HUNTER_OK || echo HUNTER_MISSING` — if HUNTER_MISSING and config provider is hunter, STOP.
+   (If provider is apollo: `test -n "$APOLLO_API_KEY" && echo APOLLO_OK || echo APOLLO_MISSING`)
 
 ## Start
 4. Read data/email_finder/config.json
@@ -61,7 +62,7 @@ You are the AJOS email finder agent. Follow EMAIL_FINDER_AGENT.md and this runbo
 - Never edit MEMORY.md, DECISIONS.md, ROADMAP.md, VISION.md
 - Never send email or LinkedIn
 - Never hand-edit contacts/actions JSON — use email_finder_engine.py CLI only
-- Never commit APOLLO_API_KEY
+- Never commit HUNTER_API_KEY or APOLLO_API_KEY
 ```
 
 ## Email finder config
@@ -70,39 +71,46 @@ Edit [`data/email_finder/config.json`](data/email_finder/config.json):
 
 | Field | Default | Purpose |
 | --- | --- | --- |
+| `provider` | `hunter` | `hunter` or `apollo` |
 | `enabled` | `true` | Master switch |
 | `max_companies_per_run` | `3` | Cap companies per cron run |
 | `max_contacts_per_company` | `2` | Top-priority contacts without email |
-| `max_credits_per_run` | `10` | Protect Apollo free credits |
+| `max_credits_per_run` | `10` | Protect Hunter/Apollo credits |
 | `require_verified_email` | `false` | Only write `email_status: verified` |
 | `allow_generic_emails` | `false` | Reject `info@`, `support@`, etc. |
 
 ## Local testing
 
 ```bash
-export APOLLO_API_KEY="your-key-here"
-python email_finder_engine.py list-queue
-python email_finder_engine.py run --max 1 --dry-run
-python email_finder_engine.py run --max 1
+export HUNTER_API_KEY="your-key-here"
+python3 email_finder_engine.py list-queue
+python3 email_finder_engine.py run --max 1 --dry-run
+python3 email_finder_engine.py run --max 1
 ```
 
-Dry-run calls Apollo but does not write JSON or record a run.
+Dry-run calls the API but does not write JSON or record a run.
 
-## Apollo credits
+## Hunter credits (default)
+
+- Email Finder: **1 credit** when email found; **0** if not found
+- Domain Search fallback: **1 credit per email returned**
+- Free plan: **50 credits/month**
+
+## Apollo credits (optional)
 
 - `people/match` costs **1 credit** per successful enrichment call
-- `mixed_people/api_search` is **free** (used as fallback before match)
-- Free plan includes a limited monthly credit pool (e.g. 75) — monitor usage in Apollo dashboard
+- Free plan may return 403 on enrichment endpoints — use Hunter instead
 
 ## Streamlit Cloud (optional)
 
 For a future in-app trigger, add to Streamlit secrets (not git):
 
 ```toml
-APOLLO_API_KEY = "your-key-here"
+HUNTER_API_KEY = "your-key-here"
+# APOLLO_API_KEY = "your-apollo-api-key"
 ```
 
-The CLI engine reads `APOLLO_API_KEY` from the environment first.
+The CLI reads keys from the environment first, then Streamlit secrets / `secrets.toml`.
 
 ## Troubleshooting failed runs
 
@@ -110,7 +118,7 @@ The CLI engine reads `APOLLO_API_KEY` from the environment first.
 | --- | --- | --- |
 | `EMAIL_FINDER_AGENT.md` / `email_finder_engine.py` not found under `/agent` | **Repository not linked** on the automation | Edit automation → set Repository `rishiajofficial/opportunity-ajos`, Branch `main`, enable **Git commit + push** |
 | `gh` not authenticated | Agent tried GitHub CLI because repo was not cloned | Fix repository link above; Cursor clones the repo when configured — `gh` is not required |
-| `APOLLO_API_KEY` missing (repo + queue OK) | Secret not in **Cursor dashboard Secrets** | [cursor.com/dashboard](https://cursor.com/dashboard) → Secrets → `APOLLO_API_KEY`; re-run until agent prints `APOLLO_OK` |
+| `APOLLO_API_KEY` / `HUNTER_API_KEY` missing | Secret not in **Cursor dashboard Secrets** | Add the key for your configured provider; re-run until agent prints `HUNTER_OK` |
 | Run on `cursor/email-finder-*` branch | Normal agent branch workflow | Open PR and merge to `main` after contacts JSON updates |
 | No files committed | Run failed before Apollo calls, or queue empty | Fix blockers, then re-run; check `python3 email_finder_engine.py list-queue` locally |
 
