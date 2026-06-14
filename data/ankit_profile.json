@@ -55,6 +55,29 @@
       "Educator onboarding abhi heavy hai — first course se revenue tak journey smooth karo"
     ]
   },
+  "outreach_voice": {
+    "signature_name": "A. Zen",
+    "tagline": "AI Product & Systems Builder, figuring out my next engagement",
+    "agent_mention": "(My AI agent identifies companies aligned with me. {company} came up.)",
+    "style": "Crisp founder-to-founder. Observation + implication + one question. No job ask.",
+    "max_body_lines": 6,
+    "avoid": [
+      "I'd love to connect",
+      "your mission and roadmap",
+      "exciting opportunity",
+      "synergy",
+      "great fit",
+      "passionate team"
+    ],
+    "example_subjects": [
+      "Well-being or human development?",
+      "Well-being platform or Human Operating System?"
+    ],
+    "example_emails": [
+      "Vlad,\n\nFrom the outside, it seems Kai could evolve from a well-being companion into a human growth co-pilot. Helping people become more self-aware and aligned.\n\nCurious if we're thinking in the same direction.\n\n—\nA. Zen\nAI Product & Systems Builder, figuring out my next engagement\n(My AI agent identifies companies aligned with me. Kyan Health came up.)",
+      "Hi [Name],\n\nBurnout often isn't a well-being problem. It's a signal that a person, role, team, or environment is misaligned.\n\nOpenUp seems to be in a unique position to collect signals that could eventually answer one of the most important questions about a person:\n\nWhat makes them thrive?\n\nCurious about your future direction.\n\nWell-being platform or Human Operating System?\n\n—\nA. Zen"
+    ]
+  },
   "note": "This starter profile is an editable hypothesis and should evolve as Ankit clarifies his strongest evidence, preferences, and constraints."
 }
 

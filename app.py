@@ -57,6 +57,7 @@ from learning import (
     is_question_answered,
     latest_answer_for,
     load_dev_agent_queue,
+    load_dev_feedback,
     load_questions,
     load_state,
     persist_learning,
@@ -66,6 +67,9 @@ from learning import (
     skip_question,
     submit_dev_feedback,
 )
+from ui_preferences import geography_options, load_preferences, save_preferences
+from chat_store import load_chat, save_chat
+from pipeline_status import pipeline_status
 
 
 BASE_DIR = Path(__file__).parent
@@ -550,6 +554,9 @@ def init_session_view() -> None:
     st.session_state.setdefault("ajos_focus_company", None)
     st.session_state.setdefault("ajos_focus_return_view", "review")
     st.session_state.setdefault("company_chats", {})
+    prefs = load_preferences()
+    st.session_state.setdefault("sidebar_geographies", prefs["sidebar_geographies"])
+    st.session_state.setdefault("sidebar_themes", prefs["sidebar_themes"])
 
 
 def _focus_step_key(company_name: str) -> str:
@@ -567,6 +574,8 @@ def set_focus_step(company_name: str, step: str) -> None:
 
 def chat_history(company_name: str) -> list[dict]:
     chats = st.session_state.company_chats
+    if company_name not in chats:
+        chats[company_name] = load_chat(company_name)
     return chats.setdefault(company_name, [])
 
 
@@ -578,13 +587,14 @@ def append_chat_message(company_name: str, role: str, bullets: list[str]) -> Non
     history.append({"role": role, "bullets": bullets})
     if len(history) > MAX_CHAT_TURNS * 2:
         del history[: -MAX_CHAT_TURNS * 2]
+    save_chat(company_name, history)
 
 
-def render_chat_messages(company_name: str) -> None:
+def render_chat_messages(company_name: str, *, height: int = 300) -> None:
     messages = chat_history(company_name)
     if not messages:
         return
-    with st.container(height=300, border=False):
+    with st.container(height=height, border=False):
         for message in messages:
             with st.chat_message(message["role"]):
                 bullets = message.get("bullets") or []
@@ -601,6 +611,7 @@ def _answer_chat_question(
     *,
     action: dict | None = None,
     profile: dict | None = None,
+    chat_mode: str = "explore",
 ) -> list[str]:
     company_name = company["company"]
     history = chat_history(company_name)[:-1]
@@ -612,6 +623,7 @@ def _answer_chat_question(
             action=action,
             history=history,
             profile=profile,
+            chat_mode=chat_mode,
         )
 
 
@@ -625,15 +637,15 @@ def render_company_chat(
     company_name = company["company"]
     report = load_report(company_name)
     has_intel = report is not None
+    chat_mode = "draft" if mode == "action" else mode
 
     mode_label = get_llm_mode_label()
     st.caption(f"Short answers · {mode_label}")
-    render_chat_messages(company_name)
+    render_chat_messages(company_name, height=450 if mode == "action" else 300)
 
-    suggest_cols = st.columns(min(3, len(suggested_questions(has_intel))))
-    for index, (col, prompt) in enumerate(
-        zip(suggest_cols, suggested_questions(has_intel))
-    ):
+    prompts = suggested_questions(has_intel, chat_mode=chat_mode)
+    suggest_cols = st.columns(min(3, len(prompts)))
+    for index, (col, prompt) in enumerate(zip(suggest_cols, prompts)):
         with col:
             if st.button(
                 prompt,
@@ -647,6 +659,7 @@ def render_company_chat(
                     report,
                     action=action,
                     profile=profile,
+                    chat_mode=chat_mode,
                 )
                 append_chat_message(company_name, "assistant", bullets)
                 st.rerun()
@@ -665,6 +678,7 @@ def render_company_chat(
             report,
             action=action,
             profile=profile,
+            chat_mode=chat_mode,
         )
         append_chat_message(company_name, "assistant", bullets)
         st.rerun()
@@ -1141,8 +1155,8 @@ def _render_dev_feedback_form() -> None:
     )
     if st.button("Submit feedback", key="dev-feedback-submit", type="primary"):
         try:
-            submit_dev_feedback(feedback_text)
-            st.success("Feedback saved. Check Proposals in AJOS learning.")
+            item = submit_dev_feedback(feedback_text)
+            st.success("Feedback saved and queued for dev agent.")
             st.rerun()
         except ValueError as error:
             st.warning(str(error))
@@ -1151,6 +1165,14 @@ def _render_dev_feedback_form() -> None:
     queued = [item for item in queue.get("items", []) if item.get("status") == "queued"]
     if queued:
         st.caption(f"{len(queued)} item(s) queued for dev agent.")
+
+    store = load_dev_feedback()
+    recent = list(reversed(store.get("items", [])))[:5]
+    if recent:
+        st.markdown("**Recent feedback**")
+        for item in recent:
+            status = item.get("status", "pending")
+            st.caption(f"{status}: {item['feedback'][:100]}")
 
 
 def render_learning_questions(learning_state: dict, questions: list[dict]) -> None:
@@ -1222,6 +1244,28 @@ def render_settings_screen() -> None:
     st.caption("Discovery, agents, and product feedback — always here in the main view.")
     render_discovery_panel(use_expander=False)
     render_dev_feedback_panel(use_expander=False)
+    try:
+        from github_sync import is_configured, load_status, sync_now
+
+        st.markdown("#### GitHub sync")
+        if is_configured():
+            status = load_status()
+            if status.get("pending"):
+                st.caption("Pending sync to GitHub…")
+                if st.button("Sync now", key="github-sync-now"):
+                    result = sync_now()
+                    if result.get("ok"):
+                        st.success("Synced to GitHub.")
+                    else:
+                        st.error(result.get("error", "Sync failed"))
+            elif status.get("last_sync"):
+                st.caption(f"Last synced: {status['last_sync']}")
+            else:
+                st.caption("Auto-sync enabled when data changes.")
+        else:
+            st.caption("Set GITHUB_TOKEN to auto-sync data/ to GitHub.")
+    except ImportError:
+        pass
 
 
 def render_list(items: list[str], empty_message: str) -> None:
@@ -1241,6 +1285,26 @@ def render_review_bullets(company: pd.Series) -> None:
     render_bullet_list(bullets, max_items=4)
 
 
+def _trigger_outreach_pipeline(company_name: str) -> None:
+    try:
+        from orchestrator_engine import enqueue
+
+        enqueue(
+            "outreach_pipeline",
+            company=company_name,
+            source="interested_click",
+            priority=1,
+        )
+    except ImportError:
+        pass
+    try:
+        from pipeline_runner import run_outreach_pipeline
+
+        run_outreach_pipeline(company_name)
+    except Exception:
+        pass
+
+
 def _handle_review_decision(
     company: pd.Series,
     learning_state: dict,
@@ -1251,11 +1315,17 @@ def _handle_review_decision(
     reason: str = "",
 ) -> None:
     company_dict = company.to_dict()
+    rating_labels = {
+        "pass": "Not Interested",
+        "saved": "Saved",
+        "interested": "Like",
+        "unclear": "Didn't Understand",
+    }
     if decision == "pass":
         if is_discovered and candidate_id:
             reject_candidate(candidate_id)
-        else:
-            record_review_decision(learning_state, company_dict, "pass")
+        record_review_decision(learning_state, company_dict, "pass")
+        st.toast(f"Saved: {rating_labels['pass']}")
     elif decision == "saved":
         if is_discovered and candidate_id:
             merged = approve_candidate(candidate_id)
@@ -1263,15 +1333,19 @@ def _handle_review_decision(
             record_review_decision(learning_state, merged, "saved")
         else:
             record_review_decision(learning_state, company_dict, "saved")
+        st.toast(f"Saved: {rating_labels['saved']}")
     elif decision == "interested":
         if is_discovered and candidate_id:
             merged = approve_candidate(candidate_id)
             load_data.clear()
             record_review_decision(learning_state, merged, "interested")
+            _trigger_outreach_pipeline(merged["company"])
             open_focus_view(merged["company"], return_view="review")
         else:
             record_review_decision(learning_state, company_dict, "interested")
+            _trigger_outreach_pipeline(company["company"])
             open_focus_view(company["company"], return_view="review")
+        st.toast(f"Saved: {rating_labels['interested']}")
     elif decision == "unclear":
         if is_discovered and candidate_id:
             reject_candidate(candidate_id, reason=reason or "Copy unclear")
@@ -1279,6 +1353,7 @@ def _handle_review_decision(
         if not is_discovered:
             queue_for_refinement(company_dict, reason)
         st.session_state.pop("ajos_unclear_company", None)
+        st.toast(f"Saved: {rating_labels['unclear']}")
     else:
         st.session_state.ajos_view = "review"
         st.session_state.ajos_focus_company = None
@@ -1509,10 +1584,13 @@ def render_sidebar_dashboard(
                 )
 
         st.markdown("---")
+        sidebar_country_options = geography_options(
+            discovery_countries=load_config().get("active_countries", [])
+        )
         selected_geographies = st.multiselect(
             "Country",
-            TARGET_GEOGRAPHIES,
-            default=selected_geographies,
+            sidebar_country_options,
+            default=[g for g in selected_geographies if g in sidebar_country_options],
             key="sidebar-countries",
         )
         selected_themes = st.multiselect(
@@ -1533,8 +1611,11 @@ def _lines_to_list(text: str) -> list[str]:
 
 def render_discovery_panel(*, use_expander: bool = True) -> None:
     config = load_config()
+    pending_country = st.session_state.get("discovery-new-country", "").strip()
     country_options = sorted(
-        set(TARGET_GEOGRAPHIES) | set(config.get("active_countries", []))
+        set(TARGET_GEOGRAPHIES)
+        | set(config.get("active_countries", []))
+        | ({pending_country} if pending_country else set())
     )
     theme_options = sorted(
         set(DISCOVERY_THEME_OPTIONS) | set(config.get("active_themes", []))
@@ -1614,7 +1695,7 @@ def render_discovery_panel(*, use_expander: bool = True) -> None:
             extra_country = new_country.strip()
             if extra_country and extra_country not in countries_to_save:
                 countries_to_save.append(extra_country)
-            save_config(
+            saved = save_config(
                 {
                     "enabled": enabled,
                     "active_countries": countries_to_save,
@@ -1625,9 +1706,16 @@ def render_discovery_panel(*, use_expander: bool = True) -> None:
                     "notify_threshold": int(notify_threshold),
                 }
             )
+            st.session_state["discovery-countries"] = countries_to_save
+            st.session_state["discovery-new-country"] = ""
+            try:
+                from github_sync import schedule_sync
+
+                schedule_sync("discovery/config.json")
+            except ImportError:
+                pass
             st.success(
-                "Saved locally. Push `data/discovery/config.json` to GitHub for the "
-                "cloud agent to use these settings."
+                f"Saved countries: {', '.join(saved.get('active_countries', countries_to_save))}"
             )
             st.rerun()
 
@@ -1795,6 +1883,10 @@ def render_focus_overview_step(
     action: dict,
 ) -> None:
     render_company_card(company, label="Next steps")
+    status = pipeline_status(company["company"], action)
+    st.caption(
+        f"Contacts: {status['contacts']} · Email: {status['email']} · Draft: {status['draft']}"
+    )
     render_action_surface(action)
     with st.expander("Why this step?", expanded=False):
         st.write(action["opportunity_summary"])
@@ -1867,6 +1959,26 @@ def render_focus_send_step(
         st.caption("Draft shortened so the mobile mail app can open reliably.")
     if not recipient:
         st.caption("Email missing? ← Back se draft mein add karo.")
+
+    if st.button("Mark as sent", key=f"focus-sent-{company['company']}", use_container_width=True):
+        from outreach_outcomes import record_sent
+
+        draft = action.get("drafts", {}).get("email", {})
+        contact = action.get("target_contact") or {}
+        record_sent(
+            company=company["company"],
+            contact=contact.get("name", ""),
+            subject=draft.get("subject", ""),
+            body=draft.get("body", ""),
+        )
+        update_action_status(
+            company["company"],
+            action["action_id"],
+            "Sent",
+            "Marked sent from Focus view.",
+        )
+        st.toast("Email marked sent — learning queued.")
+        st.rerun()
 
     with st.expander("Track progress", expanded=False):
         render_track_tab(company, profile, learning_state)
@@ -1979,11 +2091,6 @@ companies_df = companies_df.sort_values(
 
 init_session_view()
 
-if "sidebar_geographies" not in st.session_state:
-    st.session_state.sidebar_geographies = list(TARGET_GEOGRAPHIES)
-if "sidebar_themes" not in st.session_state:
-    st.session_state.sidebar_themes = list(PRIORITY_THEMES)
-
 company_dicts_all = companies_as_dicts(companies_df)
 learning_state_for_sidebar = learning_state
 queue_for_sidebar = build_review_queue(
@@ -2009,6 +2116,7 @@ pending_dev_proposals = len(
 )
 st.session_state.sidebar_geographies = selected_geographies
 st.session_state.sidebar_themes = selected_themes
+save_preferences(geographies=selected_geographies, themes=selected_themes)
 
 filtered = companies_df[
     companies_df["country"].isin(selected_geographies)

@@ -287,14 +287,46 @@ def find_email_for_contact(
     domain: str,
     config: dict[str, Any],
 ) -> tuple[ApolloResult | HunterResult | None, str | None]:
-    if config["provider"] == "hunter":
-        return find_email_for_contact_hunter(contact=contact, domain=domain, config=config)
-    return find_email_for_contact_apollo(
-        contact=contact,
-        company_name=company_name,
-        domain=domain,
-        config=config,
-    )
+    primary = config["provider"]
+    secondary = "apollo" if primary == "hunter" else "hunter"
+
+    for provider in (primary, secondary):
+        try:
+            if provider == "hunter":
+                result, err = find_email_for_contact_hunter(
+                    contact=contact, domain=domain, config=config
+                )
+            else:
+                result, err = find_email_for_contact_apollo(
+                    contact=contact,
+                    company_name=company_name,
+                    domain=domain,
+                    config=config,
+                )
+            if result and result.email:
+                return result, None
+        except Exception as exc:
+            err = str(exc)
+            continue
+
+    parsed = split_name(contact["name"])
+    if not parsed and contact.get("title"):
+        try:
+            titles = titles_for_contact(contact)
+            if config["provider"] == "hunter":
+                from hunter_client import domain_search
+
+                results = domain_search(domain=domain, limit=5)
+                for item in results:
+                    if titles and item.title:
+                        if not any(t.lower() in item.title.lower() for t in titles):
+                            continue
+                    if item.email and accept_result(item, config):
+                        return item, None
+        except Exception:
+            pass
+
+    return None, f"No acceptable email found for {contact['name']}"
 
 
 def apply_email_to_contact(

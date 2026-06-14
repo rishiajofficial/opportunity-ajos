@@ -86,14 +86,21 @@ def load_report(company_name: str) -> dict[str, Any] | None:
     return get_current_report(load_company_intelligence(company_name))
 
 
-def suggested_questions(has_intel: bool) -> list[str]:
+def suggested_questions(has_intel: bool, chat_mode: str = "explore") -> list[str]:
+    if chat_mode in {"draft", "action"}:
+        return [
+            "Kya mail likhu?",
+            "Make it crisper",
+            "Subject line — provocative",
+            "Real connect batao",
+        ]
     base = [
-        "Ye company kya karti hai?",
         "Main yahan kaise fit hoon?",
-        "Main kya solve kar sakta hoon?",
+        "Real connect batao — sycophancy mat karo",
+        "Kya opportunity create karu?",
     ]
     if has_intel:
-        base.extend(["Customers kaun hain?", "Approach kaise karoon?"])
+        base.append("Website aur interviews check karo")
     return base[:5]
 
 
@@ -119,6 +126,7 @@ def answer_company_question(
     action: dict[str, Any] | None = None,
     history: list[dict[str, Any]] | None = None,
     profile: dict[str, Any] | None = None,
+    chat_mode: str = "explore",
 ) -> list[str]:
     if is_llm_enabled():
         try:
@@ -129,6 +137,7 @@ def answer_company_question(
                 action=action,
                 history=history,
                 profile=profile,
+                chat_mode=chat_mode,
             )
         except LLMChatError as exc:
             logger.warning("Falling back to rule-based chat: %s", exc)

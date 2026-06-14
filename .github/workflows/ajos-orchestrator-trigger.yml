@@ -1,0 +1,28 @@
+name: AJOS Orchestrator Trigger
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'data/orchestrator/**'
+      - 'data/learning/dev_agent_queue.json'
+      - 'data/learning/state.json'
+      - 'data/outreach/outcomes.json'
+
+jobs:
+  trigger-orchestrator:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Trigger Cursor orchestrator webhook
+        env:
+          CURSOR_WEBHOOK_URL: ${{ secrets.CURSOR_WEBHOOK_URL }}
+          CURSOR_WEBHOOK_TOKEN: ${{ secrets.CURSOR_WEBHOOK_TOKEN }}
+        run: |
+          if [ -z "$CURSOR_WEBHOOK_URL" ] || [ -z "$CURSOR_WEBHOOK_TOKEN" ]; then
+            echo "Webhook secrets not configured — skipping."
+            exit 0
+          fi
+          curl -sS -X POST "$CURSOR_WEBHOOK_URL" \
+            -H "Authorization: Bearer $CURSOR_WEBHOOK_TOKEN" \
+            -H "Content-Type: application/json" \
+            -d '{"event":"ajos.queue_updated","repo":"opportunity-engine"}'

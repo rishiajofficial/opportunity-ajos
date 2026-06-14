@@ -430,11 +430,16 @@ def build_review_queue(
 ) -> list[dict[str, Any]]:
     from learning import get_review_queue
 
+    effective_geographies = list(geographies or [])
+    if not effective_geographies:
+        config = load_config()
+        effective_geographies = list(config.get("active_countries", []))
+
     csv_queue = get_review_queue(company_dicts, learning_state)
     discovery_queue = []
     for candidate in get_pending_candidates():
         review_item = candidate_to_review_dict(candidate)
-        if geographies and review_item["country"] not in geographies:
+        if effective_geographies and review_item["country"] not in effective_geographies:
             continue
         if themes and review_item["theme"] not in themes:
             continue
@@ -476,6 +481,18 @@ def main() -> None:
         print(json.dumps(created, indent=2))
         if should_notify(created):
             print("NOTIFY", file=sys.stderr)
+            try:
+                from slack_notify import notify_discovery_match
+
+                score = weighted_base_score(created["base_scores"])
+                notify_discovery_match(
+                    created["name"],
+                    created["country"],
+                    created["theme"],
+                    score,
+                )
+            except ImportError:
+                pass
         return
 
     if args.command == "list-pending":

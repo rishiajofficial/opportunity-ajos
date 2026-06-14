@@ -1,0 +1,5 @@
+{
+  "auto_approve_dev_feedback": true,
+  "max_items_per_run": 3,
+  "webhook_enabled": true
+}

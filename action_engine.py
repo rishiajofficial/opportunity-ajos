@@ -20,6 +20,7 @@ COMPANIES_ACTIONS_DIR = ACTIONS_DIR / "companies"
 PATTERNS_PATH = ACTIONS_DIR / "patterns.json"
 
 ACTION_TYPES = (
+    "Conversation opener",
     "Send introduction email",
     "Send LinkedIn message",
     "Request conversation",
@@ -317,9 +318,9 @@ def choose_recommended_action(
         return role_action
 
     if feedback and feedback["rating"] == "Like":
-        return "Request conversation"
+        return "Conversation opener"
 
-    return "Send LinkedIn message"
+    return "Conversation opener"
 
 
 def resolve_draft_recipient(action: dict[str, Any]) -> str:
@@ -388,6 +389,18 @@ def generate_email_draft(
     report: dict[str, Any] | None,
     contact: dict[str, Any] | None = None,
 ) -> tuple[str, str]:
+    try:
+        from outreach_llm import generate_email_draft_llm, load_config as load_outreach_config
+
+        if load_outreach_config().get("draft_mode") == "llm":
+            subject, body, _reasoning = generate_email_draft_llm(
+                company, report, contact, profile
+            )
+            if subject and body:
+                return subject, body
+    except Exception:
+        pass
+
     company_name = company["company"]
     role = company["suggested_role"]
     greeting = f"Hello {contact['name']}," if contact else "Hello,"
@@ -557,14 +570,18 @@ def enrich_action_with_contact(
     company: dict[str, Any],
     profile: dict[str, Any],
 ) -> dict[str, Any]:
-    if action.get("target_contact"):
-        return action
     contact_recs = get_contact_recommendations(
         entity["entity_id"], action.get("recommended_action")
     )
     target_contact = contact_summary(contact_recs["primary"])
     if not target_contact:
         return action
+
+    existing = action.get("target_contact") or {}
+    if existing.get("name") == target_contact.get("name") and existing.get("email"):
+        draft_to = action.get("drafts", {}).get("email", {}).get("to", "")
+        if draft_to:
+            return action
 
     report = None
     if intelligence_status(company["company"])["exists"]:
@@ -573,7 +590,7 @@ def enrich_action_with_contact(
     timestamp = now_iso()
     email_subject, email_body = generate_email_draft(
         company,
-        action["recommended_action"],
+        action.get("recommended_action", "Conversation opener"),
         profile,
         report,
         target_contact,

@@ -79,8 +79,8 @@ def validate_config(config: dict[str, Any]) -> None:
     for field in required:
         if field not in config:
             raise ValueError(f"Contact discovery config missing required field: {field}")
-    if config["provider"] != "hunter":
-        raise ValueError("Only provider 'hunter' is supported in V1.")
+    if config["provider"] not in ("hunter", "apollo"):
+        raise ValueError("Provider must be 'hunter' or 'apollo'.")
     for int_field in ("max_companies_per_run", "max_contacts_per_company", "max_credits_per_run"):
         value = config[int_field]
         if not isinstance(value, int) or value < 0 or value > 25:
@@ -309,6 +309,45 @@ def bootstrap_company(
         contacts.append(contact)
         seen_emails.add(email_key)
         credits_used += result.credits_used
+
+    if not contacts:
+        try:
+            from apollo_client import ApolloClientError, search_people
+
+            apollo_people = search_people(domain=domain, titles=["CEO", "Founder", "Head of Product"])
+            for person in apollo_people[: config["max_contacts_per_company"]]:
+                name_parts = [
+                    part for part in (person.first_name, person.last_name) if part
+                ]
+                if len(name_parts) < 2:
+                    continue
+                name = " ".join(name_parts)
+                if VAGUE_NAME_PATTERN.search(name):
+                    continue
+                title = (person.title or "Leadership").strip()
+                role_tags = infer_role_tags(title)
+                priority = min(100, title_priority(title) + (4 if "founder" in role_tags else 0))
+                slug = company_to_slug(company_name)
+                contact = {
+                    "contact_id": contact_id_for(slug, name),
+                    "name": name,
+                    "title": title,
+                    "why_they_matter": why_they_matter(title, company_name),
+                    "priority_score": priority or 80,
+                    "source_url": website or f"https://{domain}",
+                    "role_tags": role_tags,
+                    "email": "",
+                    "email_status": "unknown",
+                    "email_source": "apollo",
+                    "email_source_url": "",
+                    "email_found_at": "",
+                }
+                validate_contact(contact)
+                if any(existing["contact_id"] == contact["contact_id"] for existing in contacts):
+                    continue
+                contacts.append(contact)
+        except Exception as error:
+            company_result["skipped"].append({"reason": f"apollo fallback: {error}"})
 
     if not contacts:
         company_result["skipped"].append({"reason": "no acceptable contacts from domain search"})
