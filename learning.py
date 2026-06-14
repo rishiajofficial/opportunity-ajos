@@ -92,6 +92,13 @@ def save_json(path: Path, data: Any) -> None:
     with path.open("w", encoding="utf-8") as destination:
         json.dump(data, destination, indent=2, ensure_ascii=True)
         destination.write("\n")
+    try:
+        from github_sync import schedule_sync
+
+        if path.is_relative_to(LEARNING_DIR):
+            schedule_sync(f"learning/{path.name}")
+    except ImportError:
+        pass
 
 
 def load_questions() -> list[dict[str, Any]]:
@@ -502,7 +509,7 @@ def suggest_dev_action(feedback: str) -> str:
     return f"Implement in opportunity-engine: {trimmed}"
 
 
-def submit_dev_feedback(feedback: str) -> dict[str, Any]:
+def submit_dev_feedback(feedback: str, *, auto_queue: bool | None = None) -> dict[str, Any]:
     text = feedback.strip()
     if not text:
         raise ValueError("Feedback cannot be empty.")
@@ -516,8 +523,57 @@ def submit_dev_feedback(feedback: str) -> dict[str, Any]:
         "approved_at": None,
         "dismissed_at": None,
     }
-    store["items"].append(item)
-    save_dev_feedback(store)
+
+    should_auto_queue = auto_queue
+    if should_auto_queue is None:
+        try:
+            from orchestrator_engine import load_config as load_orch_config
+
+            should_auto_queue = load_orch_config().get("auto_approve_dev_feedback", True)
+        except ImportError:
+            should_auto_queue = True
+
+    if should_auto_queue:
+        item["status"] = "approved"
+        item["approved_at"] = now_iso()
+        store["items"].append(item)
+        save_dev_feedback(store)
+
+        queue = load_dev_agent_queue()
+        queue["items"].append(
+            {
+                "id": item["id"],
+                "feedback": item["feedback"],
+                "suggested_action": item["suggested_action"],
+                "approved_at": item["approved_at"],
+                "status": "queued",
+            }
+        )
+        save_dev_agent_queue(queue)
+
+        try:
+            from orchestrator_engine import enqueue
+
+            enqueue(
+                "dev_implement",
+                feedback_id=item["id"],
+                notes=text[:120],
+                source="dev_feedback_submit",
+                priority=2,
+            )
+        except ImportError:
+            pass
+
+        try:
+            from slack_notify import notify_dev_feedback
+
+            notify_dev_feedback(text)
+        except ImportError:
+            pass
+    else:
+        store["items"].append(item)
+        save_dev_feedback(store)
+
     state = load_state()
     save_json(PROPOSALS_PATH, generate_proposals(state, load_questions()))
     return item

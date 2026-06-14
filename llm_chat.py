@@ -15,7 +15,20 @@ from app_secrets import get_secret
 PROFILE_PATH = Path(__file__).parent / "data" / "ankit_profile.json"
 OPENAI_MODEL = "gpt-4o-mini"
 ANTHROPIC_MODEL = "claude-haiku-4-5"
-MAX_HISTORY_TURNS = 3
+MAX_HISTORY_TURNS = 6
+
+CHAT_MODE_LIMITS = {
+    "explore": {"max_bullets": 6, "max_bullet_chars": 160, "max_tokens": 800, "word_hint": 40},
+    "draft": {"max_bullets": 4, "max_bullet_chars": 120, "max_tokens": 600, "word_hint": 30},
+    "crisp": {"max_bullets": 2, "max_bullet_chars": 100, "max_tokens": 180, "word_hint": 12},
+    "action": {"max_bullets": 4, "max_bullet_chars": 120, "max_tokens": 600, "word_hint": 30},
+}
+
+
+def mode_limits(chat_mode: str = "explore") -> dict[str, int]:
+    return CHAT_MODE_LIMITS.get(chat_mode, CHAT_MODE_LIMITS["explore"])
+
+
 MAX_BULLETS = 2
 MAX_BULLET_CHARS = 100
 
@@ -173,23 +186,40 @@ def _truncate_bullet(text: str, max_chars: int = MAX_BULLET_CHARS) -> str:
     return (clipped or cleaned[: max_chars - 1]).rstrip(".,;") + "…"
 
 
-def _bullet_cap(question: str) -> int:
-    return 1 if _is_casual_turn(question) else MAX_BULLETS
+def _bullet_cap(question: str, chat_mode: str = "explore") -> int:
+    if _is_casual_turn(question):
+        return 1
+    return mode_limits(chat_mode)["max_bullets"]
 
 
-def _build_system_prompt(profile: dict[str, Any], *, question: str) -> str:
+def _build_system_prompt(
+    profile: dict[str, Any],
+    *,
+    question: str,
+    chat_mode: str = "explore",
+) -> str:
     voice = profile.get("content_voice", {})
     avoid = ", ".join(voice.get("avoid", []))
     examples = "\n".join(f"- {item}" for item in voice.get("example_bullets", [])[:2])
-    bullet_cap = _bullet_cap(question)
+    limits = mode_limits(chat_mode)
+    bullet_cap = _bullet_cap(question, chat_mode)
     casual_rule = (
         "User ne casual hi/hello bola — sirf 1 line, max 8 words, phir ek short sawaal poocho."
         if bullet_cap == 1
-        else f"Max {bullet_cap} bullets. Har bullet max 12 words — essay mat likho."
+        else (
+            f"Max {bullet_cap} bullets. Har bullet max {limits['word_hint']} words — essay mat likho."
+        )
     )
+    mode_hint = ""
+    if chat_mode == "draft":
+        mode_hint = "User email draft co-creation mode mein hai — crisp founder opener, job mat maango."
+    elif chat_mode == "explore":
+        mode_hint = "Deep fit analysis — real connect batao, sycophancy mat karo."
+
     return f"""You are the AJOS Opportunity Engine assistant for Ankit.
 
 Mission: opportunity creation — not job matching. Help Ankit see fit and entry points fast.
+{mode_hint}
 
 Voice: Roman Hinglish, tum/tera tone. WhatsApp-speed — chhota, seedha, no corporate fluff.
 {casual_rule}
@@ -237,13 +267,22 @@ def _build_messages(
     return messages
 
 
-def parse_bullets(text: str, *, max_bullets: int = MAX_BULLETS) -> list[str]:
+def parse_bullets(
+    text: str,
+    *,
+    max_bullets: int = MAX_BULLETS,
+    max_chars: int = MAX_BULLET_CHARS,
+) -> list[str]:
     stripped = text.strip()
     if not stripped:
         return []
 
     def _normalize(items: list[Any]) -> list[str]:
-        bullets = [_truncate_bullet(str(item)) for item in items if str(item).strip()]
+        bullets = [
+            _truncate_bullet(str(item), max_chars=max_chars)
+            for item in items
+            if str(item).strip()
+        ]
         return [bullet for bullet in bullets if bullet][:max_bullets]
 
     if stripped.startswith("["):
@@ -271,10 +310,10 @@ def parse_bullets(text: str, *, max_bullets: int = MAX_BULLETS) -> list[str]:
     for line in stripped.splitlines():
         cleaned = re.sub(r"^[-*•]\s*", "", line.strip())
         if cleaned:
-            lines.append(_truncate_bullet(cleaned))
+            lines.append(_truncate_bullet(cleaned, max_chars=max_chars))
     if lines:
         return lines[:max_bullets]
-    return [_truncate_bullet(stripped)]
+    return [_truncate_bullet(stripped, max_chars=max_chars)]
 
 
 def _anthropic_model() -> str:
@@ -285,13 +324,15 @@ def _call_anthropic(
     api_key: str,
     system_prompt: str,
     messages: list[dict[str, str]],
+    *,
+    max_tokens: int = 180,
 ) -> str:
     from anthropic import Anthropic
 
     client = Anthropic(api_key=api_key)
     response = client.messages.create(
         model=_anthropic_model(),
-        max_tokens=180,
+        max_tokens=max_tokens,
         temperature=0.35,
         system=system_prompt,
         messages=messages,
@@ -304,6 +345,8 @@ def _call_openai(
     api_key: str,
     system_prompt: str,
     messages: list[dict[str, str]],
+    *,
+    max_tokens: int = 180,
 ) -> str:
     client = OpenAI(api_key=api_key)
     openai_messages: list[dict[str, str]] = [
@@ -314,9 +357,34 @@ def _call_openai(
         model=OPENAI_MODEL,
         messages=openai_messages,
         temperature=0.35,
-        max_tokens=180,
+        max_tokens=max_tokens,
     )
     return (response.choices[0].message.content or "").strip()
+
+
+def _call_llm_with_failover(
+    system_prompt: str,
+    messages: list[dict[str, str]],
+    *,
+    max_tokens: int,
+) -> str:
+    errors: list[str] = []
+    if get_anthropic_api_key():
+        try:
+            return _call_anthropic(
+                get_anthropic_api_key(), system_prompt, messages, max_tokens=max_tokens
+            )
+        except Exception as exc:
+            errors.append(f"anthropic: {exc}")
+            logger.warning("Anthropic failed, trying OpenAI: %s", exc)
+    if get_openai_api_key():
+        try:
+            return _call_openai(
+                get_openai_api_key(), system_prompt, messages, max_tokens=max_tokens
+            )
+        except Exception as exc:
+            errors.append(f"openai: {exc}")
+    raise LLMChatError("; ".join(errors) or "No LLM provider available")
 
 
 def answer_with_llm(
@@ -327,27 +395,53 @@ def answer_with_llm(
     profile: dict[str, Any] | None = None,
     action: dict[str, Any] | None = None,
     history: list[dict[str, Any]] | None = None,
+    chat_mode: str = "explore",
 ) -> list[str]:
-    provider = get_active_provider()
-    if not provider:
+    if not get_active_provider():
         raise LLMChatError("No LLM API key configured (ANTHROPIC_API_KEY or OPENAI_API_KEY)")
 
     profile = profile or load_profile()
     context = build_chat_context(company, report, profile, action)
-    bullet_cap = _bullet_cap(question)
-    system_prompt = _build_system_prompt(profile, question=question)
+    limits = mode_limits(chat_mode)
+    bullet_cap = _bullet_cap(question, chat_mode)
+    system_prompt = _build_system_prompt(profile, question=question, chat_mode=chat_mode)
     messages = _build_messages(context, history, question)
 
+    normalized = re.sub(r"\s+", " ", question.lower())
+    if chat_mode == "draft" and any(
+        word in normalized for word in ("mail", "email", "draft", "likhu", "subject")
+    ):
+        try:
+            from outreach_llm import derive_strategic_angle, generate_conversation_opener
+
+            contact = (action or {}).get("target_contact")
+            angle = derive_strategic_angle(company, report, profile)
+            subject, body, reasoning = generate_conversation_opener(
+                company, contact, angle, profile
+            )
+            return [
+                f"Subject: {subject}",
+                body,
+                f"Angle: {reasoning[:200]}",
+            ][:bullet_cap]
+        except Exception as exc:
+            logger.warning("Outreach draft generation failed: %s", exc)
+
     try:
-        if provider == "anthropic":
-            content = _call_anthropic(get_anthropic_api_key(), system_prompt, messages)
-        else:
-            content = _call_openai(get_openai_api_key(), system_prompt, messages)
+        content = _call_llm_with_failover(
+            system_prompt, messages, max_tokens=limits["max_tokens"]
+        )
+    except LLMChatError:
+        raise
     except Exception as exc:
-        logger.warning("LLM chat failed (%s): %s", provider, exc)
+        logger.warning("LLM chat failed: %s", exc)
         raise LLMChatError(str(exc)) from exc
 
-    bullets = parse_bullets(content, max_bullets=bullet_cap)
+    bullets = parse_bullets(
+        content,
+        max_bullets=bullet_cap,
+        max_chars=limits["max_bullet_chars"],
+    )
     if not bullets:
         raise LLMChatError("Empty LLM response")
     return bullets[:bullet_cap]
