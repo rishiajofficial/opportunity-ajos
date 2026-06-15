@@ -1245,6 +1245,25 @@ def render_settings_screen() -> None:
     render_discovery_panel(use_expander=False)
     render_dev_feedback_panel(use_expander=False)
     try:
+        from orchestrator_engine import enqueue, get_queued
+
+        st.markdown("#### Orchestrator")
+        queued = get_queued(limit=10)
+        st.caption(f"{len(queued)} queued orchestrator item(s).")
+        if st.button("Test orchestrator sync", key="orchestrator-sync-test"):
+            item = enqueue(
+                "sync_check",
+                notes="Manual sync check from Settings",
+                source="settings_sync_test",
+                priority=1,
+            )
+            st.success(
+                "Queued sync check "
+                f"{item['id']} — GitHub sync will push the orchestrator queue when configured."
+            )
+    except ImportError:
+        pass
+    try:
         from github_sync import is_configured, load_status, sync_now
 
         st.markdown("#### GitHub sync")

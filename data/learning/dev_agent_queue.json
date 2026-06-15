@@ -5,7 +5,8 @@
       "feedback": "test orchestrator sync",
       "suggested_action": "Implement in opportunity-engine: test orchestrator sync",
       "approved_at": "2026-06-14T12:00:00+00:00",
-      "status": "queued"
+      "status": "done",
+      "completed_at": "2026-06-15T07:36:14+00:00"
     }
   ]
 }

@@ -47,18 +47,28 @@ def is_configured() -> bool:
     return bool(get_secret("GITHUB_TOKEN"))
 
 
+def data_relative_path(path_value: str | Path) -> Path | None:
+    path = Path(path_value)
+    if path.is_absolute():
+        try:
+            return path.relative_to(DATA_DIR)
+        except ValueError:
+            return None
+
+    parts = path.parts
+    rel = Path(*parts[1:]) if parts and parts[0] == "data" else path
+    if not rel.parts or any(part == ".." for part in rel.parts):
+        return None
+    return rel
+
+
 def schedule_sync(relative_path: str | Path) -> None:
     """Queue a data file for debounced git push."""
     if not is_configured():
         return
-    path = Path(relative_path)
-    try:
-        rel = path.relative_to(DATA_DIR)
-    except ValueError:
-        if path.is_relative_to(Path(__file__).parent):
-            rel = path.relative_to(Path(__file__).parent / "data")
-        else:
-            return
+    rel = data_relative_path(relative_path)
+    if rel is None:
+        return
     with _lock:
         _pending_paths.add(str(rel))
         save_status({**load_status(), "pending": True, "queued_at": now_iso()})

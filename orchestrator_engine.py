@@ -59,6 +59,15 @@ def save_queue(store: dict[str, list]) -> None:
     save_json(QUEUE_PATH, store)
 
 
+def _schedule_queue_sync() -> None:
+    try:
+        from github_sync import schedule_sync
+
+        schedule_sync("orchestrator/queue.json")
+    except ImportError:
+        pass
+
+
 def item_id() -> str:
     return f"orch_{datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S%f')[:17]}"
 
@@ -90,12 +99,7 @@ def enqueue(
     }
     store["items"].append(item)
     save_queue(store)
-    try:
-        from github_sync import schedule_sync
-
-        schedule_sync("orchestrator/queue.json")
-    except ImportError:
-        pass
+    _schedule_queue_sync()
     return item
 
 
@@ -117,12 +121,7 @@ def mark_done(item_id_value: str, *, result: str = "") -> dict[str, Any] | None:
     if result:
         item["result"] = result
     save_queue(store)
-    try:
-        from github_sync import schedule_sync
-
-        schedule_sync("orchestrator/queue.json")
-    except ImportError:
-        pass
+    _schedule_queue_sync()
     return item
 
 
@@ -135,4 +134,5 @@ def mark_failed(item_id_value: str, error: str) -> dict[str, Any] | None:
     item["error"] = error
     item["completed_at"] = now_iso()
     save_queue(store)
+    _schedule_queue_sync()
     return item
